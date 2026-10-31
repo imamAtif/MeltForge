@@ -1,4 +1,4 @@
-/* Layout & Shell Styles for MeltForge */
+/* Studio Layout & Shell Architecture */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,26 +6,26 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--bg-app);
-  color: var(--text-primary);
-  line-height: 1.5;
-  font-size: 14px;
+  font-family: var(--font-sans);
+  background-color: var(--bg-canvas);
+  color: var(--text-main);
+  line-height: 1.45;
+  font-size: 13px;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
-/* Header & Top Navigation */
+/* Studio Header */
 .app-header {
-  height: 64px;
-  background-color: var(--bg-surface);
-  border-bottom: 1px solid var(--border-subtle);
+  height: 52px;
+  background-color: var(--bg-subtle);
+  border-bottom: 1px solid var(--border-default);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 16px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -34,128 +34,164 @@ body {
 .brand-section {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.brand-logo {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 700;
-  font-size: 16px;
-  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
+.brand-icon-svg {
+  width: 22px;
+  height: 22px;
+  color: var(--accent);
 }
 
 .brand-title {
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.3px;
-  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-main);
+  text-transform: uppercase;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.brand-badge {
+.brand-tag {
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  background-color: var(--bg-surface-elevated);
-  border: 1px solid var(--border-default);
   color: var(--text-muted);
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  letter-spacing: 0.5px;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
+  font-weight: 500;
 }
 
-/* Center Navigation Tabs */
-.nav-tabs {
+/* Center Nav Segmented Bar */
+.nav-segment {
   display: flex;
-  background-color: var(--bg-app);
-  border: 1px solid var(--border-subtle);
-  padding: 3px;
-  border-radius: var(--radius-md);
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 2px;
   gap: 2px;
 }
 
 .nav-tab {
-  padding: 6px 14px;
-  border-radius: var(--radius-sm);
-  font-size: 13px;
+  padding: 5px 12px;
+  border-radius: var(--radius-xs);
+  font-size: 12px;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   background: transparent;
   border: none;
-  transition: all var(--transition-fast);
+  transition: all var(--speed);
   display: flex;
   align-items: center;
   gap: 6px;
+  user-select: none;
 }
 
 .nav-tab:hover {
-  color: var(--text-primary);
+  color: var(--text-main);
   background-color: var(--bg-hover);
 }
 
 .nav-tab.active {
-  background-color: var(--bg-surface-elevated);
-  color: var(--text-primary);
-  box-shadow: var(--shadow-sm);
+  background-color: var(--bg-panel-elevated);
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* GitOps Status Bar */
+/* GitOps Right Bar */
 .gitops-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
-.git-pill {
-  display: flex;
+.git-badge {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  background-color: var(--bg-app);
-  border: 1px solid var(--border-subtle);
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  font-size: 12px;
-  color: var(--text-secondary);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .git-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background-color: var(--status-success);
+  background-color: var(--color-success);
 }
 
 .git-dot.dirty {
-  background-color: var(--status-warning);
+  background-color: var(--color-warning);
 }
 
-.git-changes-badge {
-  background-color: var(--status-warning-bg);
-  color: var(--status-warning);
-  font-size: 11px;
-  padding: 2px 7px;
-  border-radius: var(--radius-full);
-  border: 1px solid rgba(245, 158, 11, 0.25);
+.git-diff-tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning-border);
+  padding: 1px 5px;
+  border-radius: var(--radius-xs);
   font-weight: 600;
 }
 
-/* Main Content Area */
+/* Sub-Command / Studio Breadcrumb Bar */
+.command-bar {
+  height: 42px;
+  background-color: var(--bg-canvas);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+}
+
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.breadcrumb-slash {
+  color: var(--text-faint);
+}
+
+.breadcrumb-active {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.catalog-sync-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sync-status-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* Content Container */
 .app-container {
-  max-width: 1200px;
+  max-width: 1280px;
   width: 100%;
   margin: 0 auto;
-  padding: 32px 24px 64px 24px;
+  padding: 24px 20px 80px 20px;
   flex: 1;
 }
 
@@ -165,31 +201,27 @@ body {
 
 .view-section.active {
   display: block;
-  animation: fadeIn 180ms ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Page Header */
-.page-header {
+/* Section Header */
+.section-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 28px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
 }
 
-.page-title {
-  font-size: 24px;
+.section-title {
+  font-size: 18px;
   font-weight: 600;
-  letter-spacing: -0.4px;
-  color: var(--text-primary);
-  margin-bottom: 4px;
+  letter-spacing: -0.2px;
+  color: var(--text-main);
 }
 
-.page-subtitle {
-  font-size: 14px;
+.section-desc {
+  font-size: 12px;
   color: var(--text-muted);
+  margin-top: 2px;
 }

@@ -1,55 +1,140 @@
-/* MeltForge Design Tokens - Minimalist, modern dark mode palette */
-:root {
-  /* Colors */
-  --bg-app: #0c0d10;
-  --bg-surface: #14161b;
-  --bg-surface-elevated: #1a1d24;
-  --bg-input: #101217;
-  --bg-hover: #222630;
-  --bg-active: #2a2f3d;
+/* MeltForge Industrial Design Tokens - Precision DataOps Studio Palette */
 
-  /* Borders & Dividers */
-  --border-subtle: #232731;
-  --border-default: #2e3442;
-  --border-focused: #505c74;
+/* --------------------------------------------------------------------------
+   DARK THEME (Default: Precision Studio Obsidian & Forge Flame)
+   -------------------------------------------------------------------------- */
+:root, [data-theme="dark"] {
+  --theme-mode: dark;
+
+  /* Surface Layers (Deep Studio Carbon & Slate) */
+  --bg-canvas: #090b0e;
+  --bg-subtle: #0f1217;
+  --bg-panel: #141820;
+  --bg-panel-elevated: #1b202c;
+  --bg-hover: #222836;
+  --bg-active: #2a3142;
+  --bg-input: #0e1117;
+
+  /* Borders - Architectural precision lines */
+  --border-subtle: #191e28;
+  --border-default: #252c3a;
+  --border-highlight: #3b455b;
+  --border-focus: #f97316;
 
   /* Typography */
-  --text-primary: #f4f5f8;
-  --text-secondary: #9da5b4;
-  --text-muted: #656d7d;
-  --text-disabled: #474e5d;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", Menlo, Monaco, Consolas, monospace;
 
-  /* Accent - Forge Flame / Amber & Precision Blue */
-  --accent: #f97316;          /* Warm Forge Amber */
+  /* Text Colors */
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-faint: #64748b;
+  --text-inverse: #090b10;
+
+  /* Accents - Foundry Forge Flame (Sources/Taps) & Engine Sky (Destinations/Loaders) */
+  --accent: #f97316;
   --accent-hover: #ea580c;
-  --accent-muted: rgba(249, 115, 22, 0.12);
-  --accent-border: rgba(249, 115, 22, 0.35);
+  --accent-subtle: rgba(249, 115, 22, 0.10);
+  --accent-border: rgba(249, 115, 22, 0.32);
 
-  --brand-blue: #38bdf8;
-  --brand-blue-muted: rgba(56, 189, 248, 0.12);
+  --engine-cyan: #0ea5e9;
+  --engine-cyan-subtle: rgba(14, 165, 233, 0.10);
+  --engine-cyan-border: rgba(14, 165, 233, 0.32);
 
   /* Status Colors */
-  --status-success: #10b981;
-  --status-success-bg: rgba(16, 185, 129, 0.12);
-  --status-warning: #f59e0b;
-  --status-warning-bg: rgba(245, 158, 11, 0.12);
-  --status-error: #ef4444;
-  --status-error-bg: rgba(239, 68, 68, 0.12);
-  --status-info: #0ea5e9;
-  --status-info-bg: rgba(14, 165, 233, 0.12);
+  --color-success: #10b981;
+  --color-success-bg: rgba(16, 185, 129, 0.10);
+  --color-success-border: rgba(16, 185, 129, 0.30);
 
-  /* Elevation Shadows (Subtle, clean, no glowing bloom) */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.10);
+  --color-warning-border: rgba(245, 158, 11, 0.30);
 
-  /* Radii */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-full: 9999px;
+  --color-error: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.10);
+  --color-error-border: rgba(239, 68, 68, 0.30);
+
+  /* Terminal Console Dock (Authentic CLI dark console) */
+  --bg-terminal: #090b0e;
+  --bg-terminal-header: #0f1217;
+  --border-terminal: #252c3a;
+  --text-terminal: #e2e8f0;
+  --text-terminal-muted: #8b95a8;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.35);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+
+  /* Radii - Sharp engineering style (no bubbly cartoon shapes) */
+  --radius-xs: 3px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
 
   /* Transitions */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --speed: 120ms ease;
+}
+
+/* --------------------------------------------------------------------------
+   LIGHT THEME (Studio Alabaster & Crisp Charcoal)
+   -------------------------------------------------------------------------- */
+[data-theme="light"] {
+  --theme-mode: light;
+
+  /* Surface Layers (Cool Slate & Pure Studio White) */
+  --bg-canvas: #f8fafc;
+  --bg-subtle: #f1f5f9;
+  --bg-panel: #ffffff;
+  --bg-panel-elevated: #ffffff;
+  --bg-hover: #f1f5f9;
+  --bg-active: #e2e8f0;
+  --bg-input: #ffffff;
+
+  /* Borders - Crisp Slate Lines */
+  --border-subtle: #e2e8f0;
+  --border-default: #cbd5e1;
+  --border-highlight: #94a3b8;
+  --border-focus: #ea580c;
+
+  /* Text Colors */
+  --text-main: #0f172a;
+  --text-muted: #475569;
+  --text-faint: #64748b;
+  --text-inverse: #ffffff;
+
+  /* Accents */
+  --accent: #ea580c;
+  --accent-hover: #c2410c;
+  --accent-subtle: rgba(234, 88, 12, 0.08);
+  --accent-border: rgba(234, 88, 12, 0.28);
+
+  --engine-cyan: #0284c7;
+  --engine-cyan-subtle: rgba(2, 132, 199, 0.08);
+  --engine-cyan-border: rgba(2, 132, 199, 0.28);
+
+  /* Status Colors */
+  --color-success: #059669;
+  --color-success-bg: rgba(5, 150, 105, 0.08);
+  --color-success-border: rgba(5, 150, 105, 0.25);
+
+  --color-warning: #d97706;
+  --color-warning-bg: rgba(217, 119, 6, 0.08);
+  --color-warning-border: rgba(217, 119, 6, 0.25);
+
+  --color-error: #dc2626;
+  --color-error-bg: rgba(220, 38, 38, 0.08);
+  --color-error-border: rgba(220, 38, 38, 0.25);
+
+  /* Terminal Console Dock remains authentic dark console */
+  --bg-terminal: #0b0f17;
+  --bg-terminal-header: #111827;
+  --border-terminal: #1f2937;
+  --text-terminal: #f3f4f6;
+  --text-terminal-muted: #9ca3af;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
 }
