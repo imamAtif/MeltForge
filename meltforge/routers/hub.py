@@ -16,7 +16,7 @@ def get_hub_service() -> MeltanoHubService:
 
 @router.get("/plugins")
 async def list_plugins(
-    type: str = Query("extractors", regex="^(extractors|loaders)$"),
+    type: str = Query("extractors", pattern="^(extractors|loaders)$"),
     query: Optional[str] = None,
     svc: MeltanoHubService = Depends(get_hub_service)
 ):
