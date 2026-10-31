@@ -19,6 +19,23 @@ plugins:
       select:
         - users.*
         - orders.*
+    - name: tap-csv
+      variant: meltanolabs
+      config:
+        add_metadata_columns: 'true'
+        csv_files_definition: /home/atif/Downloads
+        faker_config.locale: ''
+        faker_config.seed: ''
+        files: ''
+        flattening_enabled: ''
+        flattening_max_depth: ''
+        flattening_separator: ''
+        stream_map_config: ''
+        stream_maps: ''
+      select:
+        - users.*
+        - orders.*
+        - products.*
   loaders:
     - name: target-snowflake
       variant: meltanolabs
@@ -30,5 +47,11 @@ plugins:
         warehouse: LOADING_WH
         default_target_schema: RAW
 
+    - name: target-jsonl
+      variant: andyh1203
+      config:
+        destination_path: output
+        do_timestamp_file: 'false'
+        custom_name: ''
 jobs: []
 schedules: []
