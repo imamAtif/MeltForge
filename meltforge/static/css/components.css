@@ -20,7 +20,7 @@
 
 .btn-primary {
   background-color: var(--accent);
-  color: var(--text-inverse);
+  color: #ffffff;
   font-weight: 600;
 }
 
@@ -151,7 +151,7 @@
 
 .pipeline-table td {
   padding: 12px 14px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-terminal);
   vertical-align: middle;
 }
 
@@ -391,7 +391,7 @@
 .stepper-footer {
   padding: 12px 20px;
   background-color: var(--bg-subtle);
-  border-top: 1px solid var(--border-default);
+  border-top: 1px solid var(--border-terminal);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -485,7 +485,7 @@
 
 .stream-item {
   padding: 8px 14px;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-terminal);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -510,8 +510,8 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background-color: #08090c;
-  border-top: 1px solid var(--border-default);
+  background-color: var(--bg-terminal);
+  border-top: 1px solid var(--border-terminal);
   z-index: 200;
   display: flex;
   flex-direction: column;
@@ -530,8 +530,8 @@
 .dock-header {
   height: 36px;
   padding: 0 14px;
-  background-color: #0e1015;
-  border-bottom: 1px solid var(--border-subtle);
+  background-color: var(--bg-terminal-header);
+  border-bottom: 1px solid var(--border-terminal);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -555,7 +555,7 @@
   font-family: var(--font-mono);
   font-size: 11px;
   line-height: 1.6;
-  color: #cfd4df;
+  color: var(--text-terminal);
 }
 
 .dock-line {
@@ -569,7 +569,7 @@
 }
 
 .dock-stdout {
-  color: #cbd5e1;
+  color: var(--text-terminal);
 }
 
 .dock-stderr {
@@ -619,8 +619,55 @@
 .modal-foot {
   padding: 10px 16px;
   background-color: var(--bg-subtle);
-  border-top: 1px solid var(--border-default);
+  border-top: 1px solid var(--border-terminal);
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: var(--radius-xs);
+  background-color: var(--bg-panel);
+  border: 1px solid var(--border-default);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--speed);
+  margin-left: 2px;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-main);
+  border-color: var(--border-highlight);
+}
+
+[data-theme="dark"] .theme-icon-moon {
+  display: none !important;
+}
+
+[data-theme="dark"] .theme-icon-sun {
+  display: block !important;
+}
+
+[data-theme="light"] .theme-icon-sun {
+  display: none !important;
+}
+
+[data-theme="light"] .theme-icon-moon {
+  display: block !important;
+}
+
+.dock-header .btn-subtle {
+  color: var(--text-terminal-muted);
+}
+.dock-header .btn-subtle:hover {
+  color: var(--text-terminal);
+  background-color: rgba(255, 255, 255, 0.08);
 }

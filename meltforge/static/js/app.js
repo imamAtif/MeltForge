@@ -43,6 +43,7 @@ const CATEGORIES = [
 
 // Initialize Application
 document.addEventListener("DOMContentLoaded", async () => {
+  setupThemeControls();
   setupNavigation();
   setupSyncControls();
   setupGitControls();
@@ -57,6 +58,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   ]);
   renderCurrentView();
 });
+
+
+// Theme Switching (Dark / Light Studio Modes)
+function setupThemeControls() {
+  const btnToggle = document.getElementById("btnThemeToggle");
+  if (!btnToggle) return;
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("meltforge_theme", theme);
+    btnToggle.setAttribute("title", theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode");
+  }
+
+  const saved = localStorage.getItem("meltforge_theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const initialTheme = saved || (prefersDark ? "dark" : "light");
+  applyTheme(initialTheme);
+
+  btnToggle.addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = current === "dark" ? "light" : "dark";
+    applyTheme(next);
+  });
+
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    if (!localStorage.getItem("meltforge_theme")) {
+      applyTheme(e.matches ? "dark" : "light");
+    }
+  });
+}
 
 // Keyboard Shortcut: press '/' to focus search input
 function setupKeyboardShortcuts() {

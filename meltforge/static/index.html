@@ -7,6 +7,16 @@
   <link rel="stylesheet" href="/css/variables.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/components.css">
+  <script>
+    (function() {
+      try {
+        const saved = localStorage.getItem('meltforge_theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = saved || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch(e) {}
+    })();
+  </script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e28437'><path d='M2 19.5h20v2H2zM4.5 16.5l4-11h7l4 11h-15z'/></svg>">
 </head>
 <body>
@@ -59,6 +69,10 @@
       <button class="btn btn-primary btn-sm" id="btnGitCommit" title="git commit">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><line x1="1.05" y1="12" x2="7" y2="12"></line><line x1="17.01" y1="12" x2="22.96" y2="12"></line></svg>
         Commit
+      </button>
+      <button class="theme-toggle-btn" id="btnThemeToggle" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
+        <svg class="theme-icon theme-icon-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        <svg class="theme-icon theme-icon-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
       </button>
     </div>
   </header>
@@ -253,7 +267,7 @@
           </div>
           <button class="btn btn-subtle btn-sm" id="btnCopyYaml">Copy</button>
         </div>
-        <pre style="padding: 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; overflow-x: auto; color: #cbd5e1; margin: 0;"><code id="rawYamlDisplay">Loading configuration...</code></pre>
+        <pre style="padding: 16px; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; overflow-x: auto; color: var(--text-main); margin: 0;"><code id="rawYamlDisplay">Loading configuration...</code></pre>
       </div>
     </section>
 
