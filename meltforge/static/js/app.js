@@ -566,7 +566,112 @@ function selectTargetPlugin(name) {
   renderTargetGrid();
 }
 
-// Step 3: Parameters Form
+// Step 3: Parameters Form (Smart No-Code Guided Configuration)
+const HUMAN_SETTING_LABELS = {
+  host: { label: "Server Host / Domain", placeholder: "e.g. db.example.com, localhost", tip: "Hostname or IP address of the database server" },
+  port: { label: "Port Number", placeholder: "e.g. 5432, 3306", tip: "Network port for the database service" },
+  user: { label: "Username", placeholder: "e.g. postgres, root", tip: "Database or service account username" },
+  username: { label: "Username", placeholder: "e.g. admin, svc_user", tip: "User account identifier" },
+  password: { label: "Password", placeholder: "••••••••••••", tip: "Password safely encrypted in local .env" },
+  dbname: { label: "Database Name", placeholder: "e.g. production, analytics", tip: "Name of the database" },
+  database: { label: "Database Name", placeholder: "e.g. production, analytics", tip: "Name of the target database" },
+  database_name: { label: "Database Name", placeholder: "e.g. production, analytics", tip: "Name of the database" },
+  schema: { label: "Schema", placeholder: "e.g. public", tip: "Namespace or schema within the database" },
+  schemas: { label: "Schemas to Replicate", placeholder: "e.g. public, sales", tip: "Comma-separated list of database schemas" },
+  start_date: { label: "Sync Data Starting From", placeholder: "YYYY-MM-DD or 2024-01-01T00:00:00Z", tip: "Only records created or modified after this date will be replicated" },
+  api_key: { label: "API Secret Key", placeholder: "e.g. sk_live_...", tip: "Secret API token from your developer dashboard" },
+  access_token: { label: "Access Token", placeholder: "e.g. ghp_... or bearer token", tip: "OAuth or personal access token" },
+  token: { label: "API Token", placeholder: "Secret token", tip: "Authentication token" },
+  api_token: { label: "API Token", placeholder: "Secret token", tip: "Authentication token" },
+  account_id: { label: "Account ID", placeholder: "e.g. act_12345678", tip: "Unique account identifier" },
+  client_id: { label: "Client ID", placeholder: "e.g. app_client_id", tip: "Application client identifier" },
+  client_secret: { label: "Client Secret", placeholder: "••••••••••••", tip: "Application client secret safely stored in .env" },
+  shop_url: { label: "Shopify Store URL", placeholder: "e.g. your-store.myshopify.com", tip: "Your primary Shopify store domain" },
+  destination_path: { label: "Output File or Directory", placeholder: "e.g. output/data.jsonl", tip: "Where extracted data will be written" },
+  filepath: { label: "File Path", placeholder: "e.g. data/input.csv", tip: "Local or storage file path" },
+  files: { label: "File Entities", placeholder: "CSV/file table mappings", tip: "Table and file configuration" },
+  warehouse: { label: "Snowflake Warehouse", placeholder: "e.g. COMPUTE_WH", tip: "Snowflake virtual warehouse" },
+  role: { label: "User Role", placeholder: "e.g. ACCOUNTADMIN", tip: "Database access role" },
+  bucket: { label: "S3 / Storage Bucket", placeholder: "e.g. my-data-lake-bucket", tip: "Target cloud storage bucket" },
+  s3_bucket: { label: "S3 Bucket Name", placeholder: "e.g. my-data-lake-bucket", tip: "AWS S3 bucket name" },
+  aws_access_key_id: { label: "AWS Access Key ID", placeholder: "e.g. AKIA...", tip: "AWS IAM Access Key" },
+  aws_secret_access_key: { label: "AWS Secret Access Key", placeholder: "••••••••••••", tip: "AWS IAM Secret Key safely stored in .env" },
+  dataset: { label: "BigQuery Dataset", placeholder: "e.g. raw_singer_data", tip: "Target BigQuery dataset name" },
+  project_id: { label: "GCP Project ID", placeholder: "e.g. my-gcp-project", tip: "Google Cloud Project Identifier" },
+  ssl: { label: "SSL Encryption", placeholder: "true, false, require", tip: "Secure transport layer connection" }
+};
+
+function isDatabasePlugin(name) {
+  const n = (name || "").toLowerCase();
+  return n.includes("postgres") || n.includes("mysql") || n.includes("mongo") || 
+         n.includes("snowflake") || n.includes("mssql") || n.includes("oracle") || 
+         n.includes("cockroach") || n.includes("redshift") || n.includes("clickhouse") || 
+         n.includes("sqlite") || n.includes("duckdb") || n.includes("mariadb");
+}
+
+function isEssentialSetting(s, totalCount) {
+  if (totalCount <= 5) return true;
+  if (s.required === true) return true;
+  const name = (s.name || "").toLowerCase();
+  const essentials = [
+    "host", "port", "user", "username", "password", "pwd", "database", "dbname", 
+    "database_name", "schema", "start_date", "api_key", "token", "access_token", 
+    "auth_token", "api_token", "account_id", "client_id", "client_secret", 
+    "shop_url", "shop_name", "destination_path", "filepath", "path", "bucket", 
+    "s3_bucket", "aws_access_key_id", "aws_secret_access_key", "project_id", 
+    "dataset", "warehouse", "role"
+  ];
+  return essentials.some(k => name === k || name.endsWith("." + k));
+}
+
+function getSmartDefault(s, pluginName) {
+  if (s.value !== undefined && s.value !== null && s.value !== "") return s.value;
+  const p = (pluginName || "").toLowerCase();
+  const name = (s.name || "").toLowerCase();
+
+  if (name === "port") {
+    if (p.includes("postgres")) return "5432";
+    if (p.includes("mysql") || p.includes("mariadb")) return "3306";
+    if (p.includes("mongo")) return "27017";
+    if (p.includes("mssql")) return "1433";
+    if (p.includes("clickhouse")) return "8123";
+  }
+  if (name === "schema" && (p.includes("postgres") || p.includes("snowflake") || p.includes("redshift"))) {
+    return "public";
+  }
+  if (name === "start_date") {
+    return "2024-01-01T00:00:00Z";
+  }
+  if (name === "destination_path" && p.includes("target-jsonl")) {
+    return "output/extract.jsonl";
+  }
+  return "";
+}
+
+function formatLabelTitle(name) {
+  const clean = name.toLowerCase().split('.').pop();
+  if (HUMAN_SETTING_LABELS[clean]) {
+    return HUMAN_SETTING_LABELS[clean].label;
+  }
+  return name.replace(/_/g, ' ').replace(/\./g, ' › ')
+             .replace(/\b\w/g, l => l.toUpperCase());
+}
+
+function formatPlaceholder(s) {
+  const clean = s.name.toLowerCase().split('.').pop();
+  if (HUMAN_SETTING_LABELS[clean]?.placeholder) {
+    return HUMAN_SETTING_LABELS[clean].placeholder;
+  }
+  return s.placeholder || "";
+}
+
+function formatTip(s) {
+  const clean = s.name.toLowerCase().split('.').pop();
+  if (s.description) return s.description;
+  if (HUMAN_SETTING_LABELS[clean]?.tip) return HUMAN_SETTING_LABELS[clean].tip;
+  return "";
+}
+
 async function renderStep3Forms() {
   const src = state.wizard.selectedSource;
   const tgt = state.wizard.selectedTarget;
@@ -580,57 +685,192 @@ async function renderStep3Forms() {
     API.getPluginDetails("loaders", tgt.name, tgt.default_variant)
   ]);
 
-  renderFormFields("sourceFormGrid", srcDetails.settings || [], "source");
-  renderFormFields("targetFormGrid", tgtDetails.settings || [], "target");
+  renderSmartFormSection("sourceFormGrid", srcDetails.settings || [], "source", src.name);
+  renderSmartFormSection("targetFormGrid", tgtDetails.settings || [], "target", tgt.name);
 }
 
-function renderFormFields(containerId, settings, typePrefix) {
+function renderSmartFormSection(containerId, settings, typePrefix, pluginName) {
   const container = document.getElementById(containerId);
   if (!settings || settings.length === 0) {
     container.innerHTML = `<div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 11px;">Zero required configuration parameters.</div>`;
     return;
   }
 
-  container.innerHTML = settings.map(s => {
-    const isSecret = s.secret || s.kind === "password";
-    const inputType = isSecret ? "password" : (s.kind === "integer" ? "number" : "text");
-    const defaultValue = s.value !== undefined && s.value !== null ? s.value : "";
-    const inputId = `${typePrefix}_${s.name.replace(/\./g, '_')}`;
+  const isDb = isDatabasePlugin(pluginName);
+  const total = settings.length;
+  const essentialSettings = [];
+  const advancedSettings = [];
 
-    if (s.kind === "options" && s.options) {
-      return `
-        <div class="form-item">
-          <div class="form-label-line">
-            <label class="form-label" for="${inputId}">config.${s.name}</label>
-          </div>
-          <select class="form-control form-field" id="${inputId}" data-name="${s.name}" data-secret="${isSecret}" data-type="${typePrefix}">
-            ${s.options.map(opt => `<option value="${opt}" ${opt === defaultValue ? 'selected' : ''}>${opt}</option>`).join("")}
-          </select>
-          ${s.description ? `<div class="form-help">${s.description}</div>` : ''}
-        </div>
-      `;
+  settings.forEach(s => {
+    if (isEssentialSetting(s, total)) {
+      essentialSettings.push(s);
+    } else {
+      advancedSettings.push(s);
     }
+  });
 
-    return `
-      <div class="form-item ${s.kind === 'string' && s.description?.length > 100 ? 'form-row-full' : ''}">
-        <div class="form-label-line">
-          <label class="form-label" for="${inputId}">${typePrefix === 'source' ? 'config' : 'target'}.${s.name}</label>
-          ${isSecret ? '<span class="secret-tag">ENV SECRET</span>' : ''}
+  let html = "";
+
+  // 1. One-Click Connection URL Quick-Fill Banner for Databases
+  if (isDb) {
+    html += `
+      <div class="quickfill-banner form-row-full">
+        <div class="quickfill-header">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+          <span>Quick-Fill from Database URL (Supabase, Neon, AWS RDS, Heroku, or Atlas):</span>
         </div>
-        <input 
-          type="${inputType}" 
-          class="form-control form-field" 
-          id="${inputId}" 
-          data-name="${s.name}" 
-          data-secret="${isSecret}"
-          data-type="${typePrefix}"
-          placeholder="${s.placeholder || ''}" 
-          value="${defaultValue}"
-        >
-        ${s.description ? `<div class="form-help">${s.description}</div>` : ''}
+        <div class="quickfill-row">
+          <input type="text" class="form-control quickfill-input" id="${typePrefix}_quickfill_input" placeholder="postgresql://user:password@db.example.com:5432/dbname">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="applyQuickFill('${typePrefix}', '${pluginName}')">Auto-fill</button>
+        </div>
+        <div class="quickfill-msg" id="${typePrefix}_quickfill_msg" style="display: none;"></div>
       </div>
     `;
-  }).join("");
+  }
+
+  // 2. Render Essential Primary Settings
+  html += essentialSettings.map(s => renderSingleFieldHtml(s, typePrefix, pluginName)).join("");
+
+  // 3. Render Collapsible Advanced Settings Accordion
+  if (advancedSettings.length > 0) {
+    html += `
+      <div class="form-row-full" style="margin-top: 8px;">
+        <button type="button" class="advanced-toggle-btn" id="${typePrefix}_adv_btn" onclick="toggleAdvancedSection('${typePrefix}')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="${typePrefix}_adv_icon"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          <span id="${typePrefix}_adv_label">Advanced & Tuning Options (${advancedSettings.length} optional parameters)</span>
+        </button>
+        <div class="advanced-section" id="${typePrefix}_adv_section" style="display: none;">
+          <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">Optional advanced controls (batching, timeouts, SSH tunnels, stream maps). Defaults are recommended for most pipelines.</div>
+          <div class="form-grid">
+            ${advancedSettings.map(s => renderSingleFieldHtml(s, typePrefix, pluginName)).join("")}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderSingleFieldHtml(s, typePrefix, pluginName) {
+  const isSecret = s.secret || s.kind === "password";
+  const inputType = isSecret ? "password" : (s.kind === "integer" ? "number" : "text");
+  const defaultValue = getSmartDefault(s, pluginName);
+  const inputId = `${typePrefix}_${s.name.replace(/\./g, '_')}`;
+  const humanTitle = formatLabelTitle(s.name);
+  const placeholder = formatPlaceholder(s);
+  const tip = formatTip(s);
+
+  if (s.kind === "options" && s.options) {
+    return `
+      <div class="form-item">
+        <div class="form-label-line">
+          <div>
+            <span class="form-label-title">${humanTitle}</span>
+            <span class="form-label-code">${s.name}</span>
+          </div>
+          <span class="storage-badge ${isSecret ? 'env' : 'yaml'}">${isSecret ? 'Saved to .env' : 'meltano.yml'}</span>
+        </div>
+        <select class="form-control form-field" id="${inputId}" data-name="${s.name}" data-secret="${isSecret}" data-type="${typePrefix}">
+          ${s.options.map(opt => `<option value="${opt}" ${opt === defaultValue ? 'selected' : ''}>${opt}</option>`).join("")}
+        </select>
+        ${tip ? `<div class="form-help">${tip}</div>` : ''}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="form-item ${s.kind === 'string' && tip.length > 100 ? 'form-row-full' : ''}">
+      <div class="form-label-line">
+        <div>
+          <span class="form-label-title">${humanTitle}</span>
+          <span class="form-label-code">${s.name}</span>
+        </div>
+        <span class="storage-badge ${isSecret ? 'env' : 'yaml'}">${isSecret ? 'Saved to .env' : 'meltano.yml'}</span>
+      </div>
+      <input 
+        type="${inputType}" 
+        class="form-control form-field" 
+        id="${inputId}" 
+        data-name="${s.name}" 
+        data-secret="${isSecret}"
+        data-type="${typePrefix}"
+        placeholder="${placeholder}" 
+        value="${defaultValue}"
+      >
+      ${tip ? `<div class="form-help">${tip}</div>` : ''}
+    </div>
+  `;
+}
+
+function toggleAdvancedSection(typePrefix) {
+  const section = document.getElementById(`${typePrefix}_adv_section`);
+  const icon = document.getElementById(`${typePrefix}_adv_icon`);
+  const label = document.getElementById(`${typePrefix}_adv_label`);
+  if (!section) return;
+
+  const isHidden = section.style.display === "none";
+  section.style.display = isHidden ? "block" : "none";
+  if (icon) {
+    icon.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+  }
+}
+
+function applyQuickFill(typePrefix, pluginName) {
+  const input = document.getElementById(`${typePrefix}_quickfill_input`);
+  const msgBox = document.getElementById(`${typePrefix}_quickfill_msg`);
+  if (!input || !msgBox) return;
+
+  const rawUrl = input.value.trim();
+  if (!rawUrl) {
+    msgBox.className = "quickfill-msg error";
+    msgBox.style.display = "block";
+    msgBox.textContent = "Please paste a database connection URL first.";
+    return;
+  }
+
+  try {
+    let url;
+    try {
+      url = new URL(rawUrl);
+    } catch (e) {
+      if (rawUrl.includes("://")) throw e;
+      url = new URL("postgres://" + rawUrl);
+    }
+
+    const host = url.hostname;
+    const port = url.port || (url.protocol.includes("mysql") ? "3306" : "5432");
+    const user = decodeURIComponent(url.username || "");
+    const password = decodeURIComponent(url.password || "");
+    const database = decodeURIComponent(url.pathname ? url.pathname.replace(/^\//, "") : "");
+
+    let count = 0;
+    const setVal = (keyPattern, val) => {
+      if (!val) return;
+      const field = document.querySelector(`.form-field[data-type="${typePrefix}"][data-name*="${keyPattern}"]`);
+      if (field) {
+        field.value = val;
+        field.style.borderColor = "var(--color-success)";
+        setTimeout(() => field.style.borderColor = "", 2000);
+        count++;
+      }
+    };
+
+    setVal("host", host);
+    setVal("port", port);
+    setVal("user", user);
+    setVal("password", password);
+    setVal("database", database);
+    setVal("dbname", database);
+
+    msgBox.className = "quickfill-msg success";
+    msgBox.style.display = "block";
+    msgBox.textContent = `✓ Auto-filled ${count} connection parameters (${host ? 'Host: ' + host : ''}${user ? ', User: ' + user : ''}${database ? ', DB: ' + database : ''})!`;
+  } catch (err) {
+    msgBox.className = "quickfill-msg error";
+    msgBox.style.display = "block";
+    msgBox.textContent = "Could not parse URL. Expected format: postgresql://user:password@host:port/database";
+  }
 }
 
 function collectFormValues() {
@@ -651,14 +891,70 @@ function collectFormValues() {
   });
 }
 
+function translateConnectionError(rawError) {
+  const err = String(rawError || "").toLowerCase();
+  if (err.includes("could not translate host name") || err.includes("nodename nor servname provided") || err.includes("name or service not known")) {
+    return {
+      title: "Host Server Not Found",
+      detail: "The server hostname could not be resolved. Please verify the Host field for typos, and ensure you did not include 'http://', 'https://', or a trailing slash."
+    };
+  }
+  if (err.includes("password authentication failed") || err.includes("access denied for user") || err.includes("authentication failed")) {
+    return {
+      title: "Authentication Failed",
+      detail: "The username or password was rejected by the database. Please double-check your credentials."
+    };
+  }
+  if (err.includes("connection refused") || err.includes("errno 111")) {
+    return {
+      title: "Connection Refused",
+      detail: "The host was reached, but no database service was responding on the specified port. Verify that the database is running and the Port is open."
+    };
+  }
+  if (err.includes("timed out") || err.includes("timeout")) {
+    return {
+      title: "Connection Timed Out",
+      detail: "The database server did not respond in time. This usually indicates a firewall, cloud security group (e.g., AWS RDS Security Group), or VPN is blocking incoming traffic."
+    };
+  }
+  if (err.includes("database") && err.includes("does not exist")) {
+    return {
+      title: "Database Not Found",
+      detail: "The specified database name does not exist on this server. Check your spelling or create the database first."
+    };
+  }
+  if (err.includes("401") || err.includes("unauthorized") || err.includes("invalid api key") || err.includes("bad credentials")) {
+    return {
+      title: "API Token Rejected",
+      detail: "The API secret key or access token was rejected by the provider. Please verify you copied the full key without leading or trailing spaces."
+    };
+  }
+  if (err.includes("rate limit") || err.includes("429")) {
+    return {
+      title: "Rate Limit Exceeded",
+      detail: "The provider has temporarily throttled requests (HTTP 429). Please wait a moment before trying again."
+    };
+  }
+  return {
+    title: "Connection Test Notice",
+    detail: rawError || "Connection test completed with warnings."
+  };
+}
+
 async function runConnectionTest() {
   collectFormValues();
   const alertBox = document.getElementById("connectionTestAlert");
   alertBox.style.display = "block";
-  alertBox.style.backgroundColor = "var(--bg-panel-elevated)";
-  alertBox.style.color = "var(--text-muted)";
+  alertBox.className = "connection-feedback";
+  alertBox.style.backgroundColor = "var(--bg-subtle)";
   alertBox.style.border = "1px solid var(--border-default)";
-  alertBox.textContent = "Running test connection against connector...";
+  alertBox.style.color = "var(--text-muted)";
+  alertBox.innerHTML = `
+    <div class="connection-feedback-title">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 800ms linear infinite;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      <span>Testing connection against source connector...</span>
+    </div>
+  `;
 
   try {
     const src = state.wizard.selectedSource;
@@ -674,22 +970,51 @@ async function runConnectionTest() {
     const res = await API.testConnection("extractors", src.name);
     if (res.success) {
       alertBox.style.backgroundColor = "var(--color-success-bg)";
-      alertBox.style.color = "var(--color-success)";
       alertBox.style.border = "1px solid var(--color-success-border)";
-      alertBox.textContent = `SUCCESS: ${res.message}`;
+      alertBox.style.color = "var(--text-main)";
+      alertBox.innerHTML = `
+        <div class="connection-feedback-title" style="color: var(--color-success);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <span>Connection Verified Successfully</span>
+        </div>
+        <div class="connection-feedback-detail">Meltano successfully authenticated with ${src.name}. You are ready to proceed to Stream Selection.</div>
+      `;
     } else {
+      const diag = translateConnectionError(res.message);
       alertBox.style.backgroundColor = "var(--color-warning-bg)";
-      alertBox.style.color = "var(--color-warning)";
       alertBox.style.border = "1px solid var(--color-warning-border)";
-      alertBox.textContent = `NOTICE: ${res.message}`;
+      alertBox.style.color = "var(--text-main)";
+      alertBox.innerHTML = `
+        <div class="connection-feedback-title" style="color: var(--color-warning);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <span>${diag.title}</span>
+        </div>
+        <div class="connection-feedback-detail">${diag.detail}</div>
+        <details style="margin-top: 8px; font-size: 11px;">
+          <summary style="cursor: pointer; color: var(--text-muted); font-family: var(--font-mono);">View Raw Output</summary>
+          <pre class="connection-feedback-raw">${escapeHtml(res.message || '')}</pre>
+        </details>
+      `;
     }
   } catch (err) {
+    const diag = translateConnectionError(err.message);
     alertBox.style.backgroundColor = "var(--color-error-bg)";
-    alertBox.style.color = "var(--color-error)";
     alertBox.style.border = "1px solid var(--color-error-border)";
-    alertBox.textContent = `ERROR: ${err.message}`;
+    alertBox.style.color = "var(--text-main)";
+    alertBox.innerHTML = `
+      <div class="connection-feedback-title" style="color: var(--color-error);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+        <span>${diag.title}</span>
+      </div>
+      <div class="connection-feedback-detail">${diag.detail}</div>
+      <details style="margin-top: 8px; font-size: 11px;">
+        <summary style="cursor: pointer; color: var(--text-muted); font-family: var(--font-mono);">View Raw Output</summary>
+        <pre class="connection-feedback-raw">${escapeHtml(err.message || '')}</pre>
+      </details>
+    `;
   }
 }
+
 
 // Step 4: Stream Discovery & Selection
 async function renderStep4Streams() {
