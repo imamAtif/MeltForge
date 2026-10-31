@@ -87,7 +87,7 @@
       <div class="page-header">
         <div>
           <h1 class="page-title">Pipeline Builder</h1>
-          <p class="page-subtitle">Configure an extractor, loader, credentials, and tables without editing YAML</p>
+          <p class="page-subtitle">Browse 700+ Singer connectors or search by name</p>
         </div>
       </div>
 
@@ -96,19 +96,19 @@
         <div class="wizard-steps">
           <div class="wizard-step active" id="stepIndicator1">
             <span class="step-num">1</span>
-            <span>Choose Source</span>
+            <span>1. Choose Source (<span id="sourceCatalogCount">655</span> taps)</span>
           </div>
           <div class="wizard-step" id="stepIndicator2">
             <span class="step-num">2</span>
-            <span>Choose Destination</span>
+            <span>2. Choose Destination (<span id="targetCatalogCount">50</span> targets)</span>
           </div>
           <div class="wizard-step" id="stepIndicator3">
             <span class="step-num">3</span>
-            <span>Settings & Test</span>
+            <span>3. Settings & Test</span>
           </div>
           <div class="wizard-step" id="stepIndicator4">
             <span class="step-num">4</span>
-            <span>Select Tables</span>
+            <span>4. Select Tables</span>
           </div>
         </div>
 
@@ -116,7 +116,12 @@
         <div class="wizard-content" id="stepContent1">
           <div class="plugin-search-bar">
             <svg class="search-icon-abs" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" class="plugin-search-input" id="sourceSearchInput" placeholder="Search extractors (PostgreSQL, MySQL, Salesforce, Stripe, Sheets...)">
+            <input type="text" class="plugin-search-input" id="sourceSearchInput" placeholder="Search 655+ extractors (PostgreSQL, MySQL, Salesforce, Shopify, Stripe, MongoDB, Jira, Slack...)">
+          </div>
+          <div class="category-pills-bar" id="sourceCategoryPills"></div>
+          <div class="catalog-stats-row">
+            <span id="sourceStatsLabel">Showing all sources</span>
+            <span style="font-size: 11px;">Meltano Hub Verified</span>
           </div>
           <div class="plugin-grid" id="sourcePluginsGrid"></div>
         </div>
@@ -125,7 +130,12 @@
         <div class="wizard-content" id="stepContent2" style="display: none;">
           <div class="plugin-search-bar">
             <svg class="search-icon-abs" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <input type="text" class="plugin-search-input" id="targetSearchInput" placeholder="Search loaders (Snowflake, BigQuery, DuckDB, S3, Postgres...)">
+            <input type="text" class="plugin-search-input" id="targetSearchInput" placeholder="Search 50+ loaders (Snowflake, BigQuery, DuckDB, S3, Postgres, ClickHouse, Redshift, Athena...)">
+          </div>
+          <div class="category-pills-bar" id="targetCategoryPills"></div>
+          <div class="catalog-stats-row">
+            <span id="targetStatsLabel">Showing all destinations</span>
+            <span style="font-size: 11px;">Meltano Hub Verified</span>
           </div>
           <div class="plugin-grid" id="targetPluginsGrid"></div>
         </div>

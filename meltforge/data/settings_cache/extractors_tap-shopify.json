@@ -1,0 +1,45 @@
+{
+  "name": "tap-shopify",
+  "label": "Shopify",
+  "category": "E-Commerce",
+  "variants": [
+    "airbyte",
+    "matatika",
+    "sehnem",
+    "singer-io"
+  ],
+  "default_variant": "singer-io",
+  "logo_url": "https://hub.meltano.com/assets/logos/extractors/shopify.png",
+  "description": "Extract data from Shopify into any destination.",
+  "variant": "singer-io",
+  "pip_url": "tap-shopify",
+  "settings": [
+    {
+      "name": "api_key",
+      "label": "Private App API Password",
+      "kind": "password",
+      "description": "A Private App API Password or API Key generated using OAuth\n\n#### How to get\n\n##### Create private app\n\nFirst, you will need to create a [Private App](https://help.shopify.com/en/manual/apps/private-apps):\n\n1. Log in to your Shopify store admin at `https://<store subdomain>.myshopify.com/admin`\n2. Click \"Apps\" in the sidebar on the left\n3. On the bottom of the page, click \"Manage private apps\" next to \"Working with a developer on your shop?\"\n4. Click the \"Create a new private app\" button\n5. Enter a \"Private app name\" of your choosing, e.g. \"Meltano\"\n6. Enter your email address under \"Emergency developer email\"\n7. In the \"Admin API\" section, click \"\u25bc Review disabled Admin API permissions\"\n8. Choose \"Read access\" rather than \"No access\" in the access level dropdowns for the following permissions:\n  1. Products, variants and collections - `read_products, write_products`\n  2. Orders, transactions and fulfillments - `read_orders, write_orders`\n  3. Customer details and customer groups - `read_customers, write_customers`\n9. Click \"Save\"\n10. In the modal that appears, click \"I understand, create the app\"\n\n##### Find your API password\n\nNow that your app has been created, we can acquire the password Meltano will use to authenticate with the Shopify API.\n\n1. In the \"Admin API\" section on the private app details page, find the \"Password\" field and click \"Show\"\n2. The value that appears (starting with `shppa_`) is your API password. You can copy and paste it into the Meltano data source configuration.\n\n![Screenshot of Shopify interface showing private app API password](/assets/images/tap-shopify/private-app-api-password.png)\n",
+      "value": null,
+      "secret": true,
+      "options": null
+    },
+    {
+      "name": "shop",
+      "label": "Store Subdomain",
+      "kind": "string",
+      "description": "The store subdomain, which can be derived from your Shopify admin URL.\n\nIf your admin URL starts with `https://my-first-store.myshopify.com/`, your store subdomain is `my-first-store`.\n",
+      "value": null,
+      "secret": false,
+      "options": null
+    },
+    {
+      "name": "start_date",
+      "label": "Start Date",
+      "kind": "date_iso8601",
+      "description": "Determines how much historical data will be extracted. Please be aware that the larger the time period and amount of data, the longer the initial extraction can be expected to take.",
+      "value": null,
+      "secret": false,
+      "options": null
+    }
+  ]
+}

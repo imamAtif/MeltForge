@@ -22,7 +22,8 @@ def cli():
 @click.option("--port", default=8080, type=int, help="Port to listen on.")
 @click.option("--project-dir", default=None, help="Meltano project root directory.")
 @click.option("--no-browser", is_flag=True, default=False, help="Do not automatically open web browser.")
-def start(host: str, port: int, project_dir: str, no_browser: bool):
+@click.option("--reload/--no-reload", default=True, help="Auto-reload on code changes.")
+def start(host: str, port: int, project_dir: str, no_browser: bool, reload: bool):
     """Start the MeltForge web studio."""
     if project_dir:
         os.environ["MELTANO_PROJECT_ROOT"] = str(Path(project_dir).resolve())
@@ -41,7 +42,7 @@ def start(host: str, port: int, project_dir: str, no_browser: bool):
         host=host,
         port=port,
         log_level="info",
-        reload=False
+        reload=reload
     )
 
 

@@ -12,6 +12,10 @@ const state = {
   loaders: [],
   wizard: {
     step: 1,
+    sourceCategory: "All",
+    targetCategory: "All",
+    sourceQuery: "",
+    targetQuery: "",
     selectedSource: null,
     selectedTarget: null,
     sourceConfig: {},
@@ -23,6 +27,19 @@ const state = {
   activeRun: null,
   runTimer: null
 };
+
+const CATEGORIES = [
+  "All",
+  "Databases",
+  "Data Warehouses",
+  "CRM & Support",
+  "Finance & Payments",
+  "E-Commerce",
+  "Marketing & Analytics",
+  "Developer Tools",
+  "Files & Storage",
+  "Apps & APIs"
+];
 
 // Initialize Application
 document.addEventListener("DOMContentLoaded", async () => {
@@ -51,7 +68,7 @@ async function refreshAppState() {
   }
 }
 
-// Load Available Plugins for Wizard
+// Load Available Plugins for Wizard (All 655+ Taps and 50+ Targets)
 async function loadCatalog() {
   try {
     const [extResp, ldrResp] = await Promise.all([
@@ -60,6 +77,11 @@ async function loadCatalog() {
     ]);
     state.extractors = extResp.plugins || [];
     state.loaders = ldrResp.plugins || [];
+
+    const srcCountBadge = document.getElementById("sourceCatalogCount");
+    const tgtCountBadge = document.getElementById("targetCatalogCount");
+    if (srcCountBadge) srcCountBadge.textContent = state.extractors.length;
+    if (tgtCountBadge) tgtCountBadge.textContent = state.loaders.length;
   } catch (err) {
     console.error("Failed to load catalog:", err);
   }
@@ -156,18 +178,17 @@ async function renderPipelinesView() {
       const extName = pipe.extractor || (pipe.tasks && pipe.tasks[0]?.split(" ")[0]) || "source";
       const ldrName = pipe.loader || (pipe.tasks && pipe.tasks[0]?.split(" ")[1]) || "destination";
 
-      // Try finding icons from catalog
       const extMeta = state.extractors.find(e => e.name === extName);
       const ldrMeta = state.loaders.find(l => l.name === ldrName);
 
-      const extLogo = extMeta?.logo_url || "https://hub.meltano.com/assets/logos/extractors/postgres.png";
-      const ldrLogo = ldrMeta?.logo_url || "https://hub.meltano.com/assets/logos/loaders/snowflake.png";
+      const extLogo = extMeta?.logo_url || `https://hub.meltano.com/assets/logos/extractors/${extName.replace('tap-', '')}.png`;
+      const ldrLogo = ldrMeta?.logo_url || `https://hub.meltano.com/assets/logos/loaders/${ldrName.replace('target-', '')}.png`;
 
       return `
         <div class="pipeline-card">
           <div class="pipeline-visual-flow">
             <div class="node-box">
-              <img src="${extLogo}" class="node-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%23f97316\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/></svg>'">
+              <img src="${extLogo}" class="node-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%23f97316\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'white\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>T</text></svg>'">
               <div>
                 <div class="node-info-name">${extMeta?.label || extName}</div>
                 <div class="node-info-role">Source</div>
@@ -180,7 +201,7 @@ async function renderPipelinesView() {
             </div>
 
             <div class="node-box">
-              <img src="${ldrLogo}" class="node-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%2338bdf8\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/></svg>'">
+              <img src="${ldrLogo}" class="node-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%2338bdf8\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'white\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>L</text></svg>'">
               <div>
                 <div class="node-info-name">${ldrMeta?.label || ldrName}</div>
                 <div class="node-info-role">Destination</div>
@@ -189,7 +210,7 @@ async function renderPipelinesView() {
           </div>
 
           <div class="pipeline-actions">
-            <button class="btn btn-secondary btn-sm" onclick="configurePipeline('${extName}', '${ldrName}')">
+            <button class="btn btn-secondary btn-sm" onclick="configureExistingPipeline('${extName}', '${ldrName}')">
               Configure
             </button>
             <button class="btn btn-primary btn-sm" onclick="triggerPipelineRun('${extName}', '${ldrName}')">
@@ -221,25 +242,33 @@ function setupWizardControls() {
     switchView("pipelines");
   });
 
-  // Source Search
+  // Source Search & Categories
   const srcSearch = document.getElementById("sourceSearchInput");
   srcSearch.addEventListener("input", (e) => {
-    renderSourceGrid(e.target.value);
+    state.wizard.sourceQuery = e.target.value;
+    renderSourceGrid();
   });
 
-  // Target Search
+  // Target Search & Categories
   const tgtSearch = document.getElementById("targetSearchInput");
   tgtSearch.addEventListener("input", (e) => {
-    renderTargetGrid(e.target.value);
+    state.wizard.targetQuery = e.target.value;
+    renderTargetGrid();
   });
 
-  // Test Connection Button in Step 3
-  document.getElementById("btnTestConnection").addEventListener("click", runConnectionTest);
+  renderCategoryPills("sourceCategoryPills", (cat) => {
+    state.wizard.sourceCategory = cat;
+    renderSourceGrid();
+  });
 
-  // Discover Streams Button in Step 4
+  renderCategoryPills("targetCategoryPills", (cat) => {
+    state.wizard.targetCategory = cat;
+    renderTargetGrid();
+  });
+
+  document.getElementById("btnTestConnection").addEventListener("click", runConnectionTest);
   document.getElementById("btnRefreshStreams").addEventListener("click", loadDiscoveredStreams);
 
-  // Select all checkbox in Step 4
   document.getElementById("selectAllStreams").addEventListener("change", (e) => {
     const checked = e.target.checked;
     document.querySelectorAll(".stream-checkbox").forEach(cb => {
@@ -248,9 +277,29 @@ function setupWizardControls() {
   });
 }
 
+function renderCategoryPills(containerId, onSelect) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = CATEGORIES.map((cat, i) => `
+    <button class="cat-pill ${i === 0 ? 'active' : ''}" data-cat="${cat}">${cat}</button>
+  `).join("");
+
+  container.querySelectorAll(".cat-pill").forEach(pill => {
+    pill.addEventListener("click", () => {
+      container.querySelectorAll(".cat-pill").forEach(p => p.classList.remove("active"));
+      pill.classList.add("active");
+      onSelect(pill.getAttribute("data-cat"));
+    });
+  });
+}
+
 function resetWizard() {
   state.wizard = {
     step: 1,
+    sourceCategory: "All",
+    targetCategory: "All",
+    sourceQuery: "",
+    targetQuery: "",
     selectedSource: null,
     selectedTarget: null,
     sourceConfig: {},
@@ -264,7 +313,6 @@ function resetWizard() {
 function renderWizardStep() {
   const step = state.wizard.step;
 
-  // Update indicators
   for (let i = 1; i <= 4; i++) {
     const ind = document.getElementById(`stepIndicator${i}`);
     const content = document.getElementById(`stepContent${i}`);
@@ -273,7 +321,6 @@ function renderWizardStep() {
     content.style.display = i === step ? "block" : "none";
   }
 
-  // Update Buttons
   const btnBack = document.getElementById("btnWizardBack");
   const btnNext = document.getElementById("btnWizardNext");
 
@@ -298,16 +345,27 @@ function renderWizardStep() {
   }
 }
 
-function renderSourceGrid(query = "") {
+function renderSourceGrid() {
   const grid = document.getElementById("sourcePluginsGrid");
-  const filtered = state.extractors.filter(p => 
-    !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.label.toLowerCase().includes(query.toLowerCase())
-  );
+  const statsLabel = document.getElementById("sourceStatsLabel");
+  const query = (state.wizard.sourceQuery || "").toLowerCase().trim();
+  const cat = state.wizard.sourceCategory;
 
-  grid.innerHTML = filtered.map(p => `
+  let filtered = state.extractors.filter(p => {
+    const matchesQuery = !query || p.name.toLowerCase().includes(query) || p.label.toLowerCase().includes(query);
+    const matchesCat = cat === "All" || p.category === cat;
+    return matchesQuery && matchesCat;
+  });
+
+  statsLabel.textContent = `Showing ${filtered.length} of ${state.extractors.length} extractors`;
+
+  // Render top results smoothly
+  const displayItems = filtered.slice(0, 100);
+
+  grid.innerHTML = displayItems.map(p => `
     <div class="plugin-item-card ${state.wizard.selectedSource?.name === p.name ? 'selected' : ''}" onclick="selectSourcePlugin('${p.name}')">
       <div class="plugin-card-header">
-        <img src="${p.logo_url}" class="plugin-card-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%23f97316\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/></svg>'">
+        <img src="${p.logo_url}" class="plugin-card-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%23f97316\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'white\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>T</text></svg>'">
         <div>
           <div class="plugin-card-title">${p.label}</div>
           <div class="plugin-card-category">${p.category || 'Connector'}</div>
@@ -328,16 +386,24 @@ function selectSourcePlugin(name) {
   renderSourceGrid();
 }
 
-function renderTargetGrid(query = "") {
+function renderTargetGrid() {
   const grid = document.getElementById("targetPluginsGrid");
-  const filtered = state.loaders.filter(p => 
-    !query || p.name.toLowerCase().includes(query.toLowerCase()) || p.label.toLowerCase().includes(query.toLowerCase())
-  );
+  const statsLabel = document.getElementById("targetStatsLabel");
+  const query = (state.wizard.targetQuery || "").toLowerCase().trim();
+  const cat = state.wizard.targetCategory;
+
+  let filtered = state.loaders.filter(p => {
+    const matchesQuery = !query || p.name.toLowerCase().includes(query) || p.label.toLowerCase().includes(query);
+    const matchesCat = cat === "All" || p.category === cat;
+    return matchesQuery && matchesCat;
+  });
+
+  statsLabel.textContent = `Showing ${filtered.length} of ${state.loaders.length} destinations`;
 
   grid.innerHTML = filtered.map(p => `
     <div class="plugin-item-card ${state.wizard.selectedTarget?.name === p.name ? 'selected' : ''}" onclick="selectTargetPlugin('${p.name}')">
       <div class="plugin-card-header">
-        <img src="${p.logo_url}" class="plugin-card-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%2338bdf8\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/></svg>'">
+        <img src="${p.logo_url}" class="plugin-card-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%2338bdf8\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'white\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>L</text></svg>'">
         <div>
           <div class="plugin-card-title">${p.label}</div>
           <div class="plugin-card-category">${p.category || 'Storage'}</div>
@@ -367,10 +433,9 @@ async function renderStep3Forms() {
   document.getElementById("sourceConfigHeading").textContent = `${src.label} (Source)`;
   document.getElementById("targetConfigHeading").textContent = `${tgt.label} (Destination)`;
 
-  // Fetch full details if needed
   const [srcDetails, tgtDetails] = await Promise.all([
-    API.getPluginDetails("extractors", src.name),
-    API.getPluginDetails("loaders", tgt.name)
+    API.getPluginDetails("extractors", src.name, src.default_variant),
+    API.getPluginDetails("loaders", tgt.name, tgt.default_variant)
   ]);
 
   renderFormFields("sourceFormGrid", srcDetails.settings || [], "source");
@@ -379,10 +444,15 @@ async function renderStep3Forms() {
 
 function renderFormFields(containerId, settings, typePrefix) {
   const container = document.getElementById(containerId);
+  if (!settings || settings.length === 0) {
+    container.innerHTML = `<div style="color: var(--text-muted); font-size: 13px;">No required settings for this connector.</div>`;
+    return;
+  }
+
   container.innerHTML = settings.map(s => {
     const isSecret = s.secret || s.kind === "password";
     const inputType = isSecret ? "password" : (s.kind === "integer" ? "number" : "text");
-    const defaultValue = s.value !== undefined ? s.value : "";
+    const defaultValue = s.value !== undefined && s.value !== null ? s.value : "";
     const inputId = `${typePrefix}_${s.name.replace(/\./g, '_')}`;
 
     if (s.kind === "options" && s.options) {
@@ -421,7 +491,6 @@ function renderFormFields(containerId, settings, typePrefix) {
   }).join("");
 }
 
-// Gather user entered form values
 function collectFormValues() {
   const fields = document.querySelectorAll(".form-field");
   fields.forEach(field => {
@@ -450,11 +519,10 @@ async function runConnectionTest() {
 
   try {
     const src = state.wizard.selectedSource;
-    // First save the plugin configs temporarily so meltano can read them
     await API.savePlugin({
       plugin_type: "extractors",
       name: src.name,
-      variant: src.variant,
+      variant: src.variant || src.default_variant,
       pip_url: src.pip_url,
       config: state.wizard.sourceConfig,
       secrets: state.wizard.sourceSecrets
@@ -513,7 +581,6 @@ async function loadDiscoveredStreams() {
   }
 }
 
-// Wizard Step Navigation
 async function handleWizardNext() {
   if (state.wizard.step === 1) {
     state.wizard.step = 2;
@@ -526,7 +593,6 @@ async function handleWizardNext() {
     state.wizard.step = 4;
     renderWizardStep();
   } else if (state.wizard.step === 4) {
-    // Final Save!
     await saveNewPipeline();
   }
 }
@@ -538,39 +604,34 @@ function handleWizardBack() {
   }
 }
 
-// Commit New Pipeline to meltano.yml
 async function saveNewPipeline() {
   const src = state.wizard.selectedSource;
   const tgt = state.wizard.selectedTarget;
 
-  // Collect selected stream names
   const selectedStreamCheckboxes = document.querySelectorAll(".stream-checkbox:checked");
   const selectedStreams = Array.from(selectedStreamCheckboxes).map(cb => cb.getAttribute("data-stream"));
   const selectRules = selectedStreams.map(s => `${s}.*`);
 
   try {
-    // 1. Save Extractor
     await API.savePlugin({
       plugin_type: "extractors",
       name: src.name,
-      variant: src.variant,
+      variant: src.variant || src.default_variant,
       pip_url: src.pip_url,
       config: state.wizard.sourceConfig,
       secrets: state.wizard.sourceSecrets,
       select: selectRules.length > 0 ? selectRules : ["*.*"]
     });
 
-    // 2. Save Loader
     await API.savePlugin({
       plugin_type: "loaders",
       name: tgt.name,
-      variant: tgt.variant,
+      variant: tgt.variant || tgt.default_variant,
       pip_url: tgt.pip_url,
       config: state.wizard.targetConfig,
       secrets: state.wizard.targetSecrets
     });
 
-    // 3. Auto-commit to Git if desired
     try {
       await API.gitCommit(`Add pipeline ${src.name} to ${tgt.name} with ${selectedStreams.length} streams`);
     } catch (e) {
