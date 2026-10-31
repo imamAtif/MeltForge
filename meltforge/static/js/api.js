@@ -34,11 +34,14 @@ const API = {
     method: "DELETE"
   }),
 
-  // Hub APIs
+  // Hub & Sync APIs
   listPlugins: (type = "extractors", query = "") => 
     API._request(`/api/hub/plugins?type=${encodeURIComponent(type)}&query=${encodeURIComponent(query)}`),
   getPluginDetails: (type, name, variant = "") => 
     API._request(`/api/hub/plugins/${type}/${name}${variant ? `?variant=${encodeURIComponent(variant)}` : ""}`),
+  getCatalogStatus: () => API._request("/api/hub/status"),
+  syncTaps: () => API._request("/api/hub/sync/taps", { method: "POST" }),
+  syncTargets: () => API._request("/api/hub/sync/targets", { method: "POST" }),
 
   // Pipeline APIs
   listPipelines: () => API._request("/api/pipelines"),

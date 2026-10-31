@@ -1,5 +1,5 @@
 """
-Hub Router - Search and inspect plugins from Meltano Hub.
+Hub Router - Search, inspect, and synchronize plugins from Meltano Hub.
 """
 
 from fastapi import APIRouter, HTTPException, Query, Depends
@@ -12,6 +12,32 @@ router = APIRouter(prefix="/api/hub", tags=["hub"])
 def get_hub_service() -> MeltanoHubService:
     from meltforge.server import hub_service
     return hub_service
+
+
+@router.get("/status")
+async def get_catalog_status(svc: MeltanoHubService = Depends(get_hub_service)):
+    """Returns catalog counts and last sync timestamps."""
+    return svc.get_status()
+
+
+@router.post("/sync/taps")
+async def sync_taps(svc: MeltanoHubService = Depends(get_hub_service)):
+    """Synchronizes extractors (taps) catalog from Meltano Hub GitHub tree."""
+    try:
+        res = await svc.sync_plugins("extractors")
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/sync/targets")
+async def sync_targets(svc: MeltanoHubService = Depends(get_hub_service)):
+    """Synchronizes loaders (targets) catalog from Meltano Hub GitHub tree."""
+    try:
+        res = await svc.sync_plugins("loaders")
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/plugins")

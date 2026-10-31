@@ -7637,7 +7637,7 @@
       ],
       "default_variant": "hotgluexyz",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/airtable.png",
-      "description": "Load data into Airtable data platform."
+      "description": "Load data into Airtable"
     },
     {
       "name": "target-apprise",
@@ -7648,7 +7648,7 @@
       ],
       "default_variant": "autoidm",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/apprise.png",
-      "description": "Load data into Apprise data platform."
+      "description": "Load data into Apprise"
     },
     {
       "name": "target-athena",
@@ -7659,7 +7659,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/athena.png",
-      "description": "Load data into Athena data platform."
+      "description": "Load data into Athena"
     },
     {
       "name": "target-azureblobstorage",
@@ -7673,7 +7673,7 @@
       ],
       "default_variant": "allanw",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/azureblobstorage.png",
-      "description": "Load data into Azureblobstorage data platform."
+      "description": "Load data into Azureblobstorage"
     },
     {
       "name": "target-bigquery",
@@ -7688,7 +7688,7 @@
       ],
       "default_variant": "transferwise",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/bigquery.png",
-      "description": "Load data into Bigquery data platform."
+      "description": "Load data into Bigquery"
     },
     {
       "name": "target-cassandra",
@@ -7699,7 +7699,7 @@
       ],
       "default_variant": "coeff",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/cassandra.png",
-      "description": "Load data into Cassandra data platform."
+      "description": "Load data into Cassandra"
     },
     {
       "name": "target-chromadb",
@@ -7710,7 +7710,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/chromadb.png",
-      "description": "Load data into Chromadb data platform."
+      "description": "Load data into Chromadb"
     },
     {
       "name": "target-clickhouse",
@@ -7721,7 +7721,7 @@
       ],
       "default_variant": "shaped-ai",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/clickhouse.png",
-      "description": "Load data into Clickhouse data platform."
+      "description": "Load data into Clickhouse"
     },
     {
       "name": "target-cratedb",
@@ -7732,7 +7732,7 @@
       ],
       "default_variant": "cratedb",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/cratedb.png",
-      "description": "Load data into Cratedb data platform."
+      "description": "Load data into Cratedb"
     },
     {
       "name": "target-csv",
@@ -7745,7 +7745,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/csv.png",
-      "description": "Load data into Csv data platform."
+      "description": "Load data into Csv"
     },
     {
       "name": "target-datadotworld",
@@ -7756,7 +7756,7 @@
       ],
       "default_variant": "datadotworld",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/datadotworld.png",
-      "description": "Load data into Datadotworld data platform."
+      "description": "Load data into Datadotworld"
     },
     {
       "name": "target-db2",
@@ -7767,7 +7767,7 @@
       ],
       "default_variant": "infostrux",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/db2.png",
-      "description": "Load data into Db2 data platform."
+      "description": "Load data into Db2"
     },
     {
       "name": "target-duckdb",
@@ -7779,7 +7779,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/duckdb.png",
-      "description": "Load data into Duckdb data platform."
+      "description": "Load data into Duckdb"
     },
     {
       "name": "target-ducklake",
@@ -7790,7 +7790,7 @@
       ],
       "default_variant": "definite",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/ducklake.png",
-      "description": "Load data into Ducklake data platform."
+      "description": "Load data into Ducklake"
     },
     {
       "name": "target-elasticsearch",
@@ -7801,7 +7801,7 @@
       ],
       "default_variant": "dtmirizzi",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/elasticsearch.png",
-      "description": "Load data into Elasticsearch data platform."
+      "description": "Load data into Elasticsearch"
     },
     {
       "name": "target-gcs",
@@ -7812,7 +7812,7 @@
       ],
       "default_variant": "datateer",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/gcs.png",
-      "description": "Load data into Gcs data platform."
+      "description": "Load data into Gcs"
     },
     {
       "name": "target-gsheet",
@@ -7825,7 +7825,7 @@
       ],
       "default_variant": "singer-io",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/gsheet.png",
-      "description": "Load data into Gsheet data platform."
+      "description": "Load data into Gsheet"
     },
     {
       "name": "target-hdfs",
@@ -7836,7 +7836,7 @@
       ],
       "default_variant": "automattic",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/hdfs.png",
-      "description": "Load data into Hdfs data platform."
+      "description": "Load data into Hdfs"
     },
     {
       "name": "target-hubspot",
@@ -7847,7 +7847,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/hubspot.png",
-      "description": "Load data into Hubspot data platform."
+      "description": "Load data into Hubspot"
     },
     {
       "name": "target-iomete",
@@ -7858,7 +7858,7 @@
       ],
       "default_variant": "iomete",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/iomete.png",
-      "description": "Load data into Iomete data platform."
+      "description": "Load data into Iomete"
     },
     {
       "name": "target-jsonl",
@@ -7869,7 +7869,7 @@
       ],
       "default_variant": "andyh1203",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/jsonl.png",
-      "description": "Load data into Jsonl data platform."
+      "description": "Load data into Jsonl"
     },
     {
       "name": "target-kafka",
@@ -7880,7 +7880,7 @@
       ],
       "default_variant": "think41",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/kafka.png",
-      "description": "Load data into Kafka data platform."
+      "description": "Load data into Kafka"
     },
     {
       "name": "target-kinesis",
@@ -7892,7 +7892,7 @@
       ],
       "default_variant": "marouane-tradelab",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/kinesis.png",
-      "description": "Load data into Kinesis data platform."
+      "description": "Load data into Kinesis"
     },
     {
       "name": "target-magentobi",
@@ -7905,7 +7905,7 @@
       ],
       "default_variant": "singer-io",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/magentobi.png",
-      "description": "Load data into Magentobi data platform."
+      "description": "Load data into Magentobi"
     },
     {
       "name": "target-miso",
@@ -7916,7 +7916,7 @@
       ],
       "default_variant": "misoai",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/miso.png",
-      "description": "Load data into Miso data platform."
+      "description": "Load data into Miso"
     },
     {
       "name": "target-mongodb",
@@ -7927,7 +7927,7 @@
       ],
       "default_variant": "hotgluexyz",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/mongodb.png",
-      "description": "Load data into Mongodb data platform."
+      "description": "Load data into Mongodb"
     },
     {
       "name": "target-mssql",
@@ -7939,7 +7939,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/mssql.png",
-      "description": "Load data into Mssql data platform."
+      "description": "Load data into Mssql"
     },
     {
       "name": "target-mysql",
@@ -7950,7 +7950,7 @@
       ],
       "default_variant": "thkwag",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/mysql.png",
-      "description": "Load data into Mysql data platform."
+      "description": "Load data into Mysql"
     },
     {
       "name": "target-oracle",
@@ -7961,7 +7961,7 @@
       ],
       "default_variant": "radbrt",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/oracle.png",
-      "description": "Load data into Oracle data platform."
+      "description": "Load data into Oracle"
     },
     {
       "name": "target-pardot",
@@ -7972,7 +7972,7 @@
       ],
       "default_variant": "anelendata",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/pardot.png",
-      "description": "Load data into Pardot data platform."
+      "description": "Load data into Pardot"
     },
     {
       "name": "target-parquet",
@@ -7987,7 +7987,7 @@
       ],
       "default_variant": "automattic",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/parquet.png",
-      "description": "Load data into Parquet data platform."
+      "description": "Load data into Parquet"
     },
     {
       "name": "target-pinecone",
@@ -7998,7 +7998,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/pinecone.png",
-      "description": "Load data into Pinecone data platform."
+      "description": "Load data into Pinecone"
     },
     {
       "name": "target-postgres",
@@ -8012,7 +8012,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/postgres.png",
-      "description": "Load data into Postgres data platform."
+      "description": "Load data into Postgres"
     },
     {
       "name": "target-redshift",
@@ -8024,7 +8024,7 @@
       ],
       "default_variant": "transferwise",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/redshift.png",
-      "description": "Load data into Redshift data platform."
+      "description": "Load data into Redshift"
     },
     {
       "name": "target-s3-avro",
@@ -8035,7 +8035,7 @@
       ],
       "default_variant": "faumel",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/s3-avro.png",
-      "description": "Load data into S3 Avro data platform."
+      "description": "Load data into S3 Avro"
     },
     {
       "name": "target-s3-csv",
@@ -8046,7 +8046,7 @@
       ],
       "default_variant": "transferwise",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/s3-csv.png",
-      "description": "Load data into S3 Csv data platform."
+      "description": "Load data into S3 Csv"
     },
     {
       "name": "target-s3-parquet",
@@ -8058,7 +8058,7 @@
       ],
       "default_variant": "gupy-io",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/s3-parquet.png",
-      "description": "Load data into S3 Parquet data platform."
+      "description": "Load data into S3 Parquet"
     },
     {
       "name": "target-s3",
@@ -8070,7 +8070,7 @@
       ],
       "default_variant": "crowemi",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/s3.png",
-      "description": "Load data into S3 data platform."
+      "description": "Load data into S3"
     },
     {
       "name": "target-s3tables",
@@ -8081,7 +8081,7 @@
       ],
       "default_variant": "amaingot",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/s3tables.png",
-      "description": "Load data into S3Tables data platform."
+      "description": "Load data into S3Tables"
     },
     {
       "name": "target-salesforce",
@@ -8092,7 +8092,7 @@
       ],
       "default_variant": "dan-ladd",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/salesforce.png",
-      "description": "Load data into Salesforce data platform."
+      "description": "Load data into Salesforce"
     },
     {
       "name": "target-singer-jsonl",
@@ -8103,7 +8103,7 @@
       ],
       "default_variant": "kgpayne",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/singer-jsonl.png",
-      "description": "Load data into Singer Jsonl data platform."
+      "description": "Load data into Singer Jsonl"
     },
     {
       "name": "target-snowflake",
@@ -8117,7 +8117,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/snowflake.png",
-      "description": "Load data into Snowflake data platform."
+      "description": "Load data into Snowflake"
     },
     {
       "name": "target-sqlite",
@@ -8129,7 +8129,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/sqlite.png",
-      "description": "Load data into Sqlite data platform."
+      "description": "Load data into Sqlite"
     },
     {
       "name": "target-sqs",
@@ -8140,7 +8140,7 @@
       ],
       "default_variant": "hotgluexyz",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/sqs.png",
-      "description": "Load data into Sqs data platform."
+      "description": "Load data into Sqs"
     },
     {
       "name": "target-stitch",
@@ -8151,7 +8151,7 @@
       ],
       "default_variant": "singer-io",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/stitch.png",
-      "description": "Load data into Stitch data platform."
+      "description": "Load data into Stitch"
     },
     {
       "name": "target-teradata",
@@ -8162,7 +8162,7 @@
       ],
       "default_variant": "crudelis-rgb",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/teradata.png",
-      "description": "Load data into Teradata data platform."
+      "description": "Load data into Teradata"
     },
     {
       "name": "target-timeplus",
@@ -8173,7 +8173,7 @@
       ],
       "default_variant": "timeplus",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/timeplus.png",
-      "description": "Load data into Timeplus data platform."
+      "description": "Load data into Timeplus"
     },
     {
       "name": "target-vertica",
@@ -8184,7 +8184,7 @@
       ],
       "default_variant": "full360",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/vertica.png",
-      "description": "Load data into Vertica data platform."
+      "description": "Load data into Vertica"
     },
     {
       "name": "target-weaviate",
@@ -8195,7 +8195,7 @@
       ],
       "default_variant": "steven-asearcy",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/weaviate.png",
-      "description": "Load data into Weaviate data platform."
+      "description": "Load data into Weaviate"
     },
     {
       "name": "target-yaml",
@@ -8206,7 +8206,7 @@
       ],
       "default_variant": "meltanolabs",
       "logo_url": "https://hub.meltano.com/assets/logos/loaders/yaml.png",
-      "description": "Load data into Yaml data platform."
+      "description": "Load data into Yaml"
     }
   ]
 }

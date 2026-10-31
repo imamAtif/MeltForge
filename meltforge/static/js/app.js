@@ -1,13 +1,13 @@
 /**
- * MeltForge - Main Application Logic
- * Implements GitOps-backed visual workflow for Meltano pipelines.
+ * MeltForge Studio - Application Logic
+ * Industrial DataOps interface for Singer taps/targets and Meltano GitOps.
  */
 
-// Application State
 const state = {
   currentView: "pipelines",
   project: null,
   git: null,
+  catalogStatus: null,
   extractors: [],
   loaders: [],
   wizard: {
@@ -44,14 +44,34 @@ const CATEGORIES = [
 // Initialize Application
 document.addEventListener("DOMContentLoaded", async () => {
   setupNavigation();
+  setupSyncControls();
   setupGitControls();
   setupTerminalDrawer();
   setupWizardControls();
+  setupKeyboardShortcuts();
 
-  await refreshAppState();
-  await loadCatalog();
+  await Promise.all([
+    refreshAppState(),
+    refreshCatalogStatus(),
+    loadCatalog()
+  ]);
   renderCurrentView();
 });
+
+// Keyboard Shortcut: press '/' to focus search input
+function setupKeyboardShortcuts() {
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "/" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
+      e.preventDefault();
+      const activeSearch = state.wizard.step === 1 
+        ? document.getElementById("sourceSearchInput") 
+        : document.getElementById("targetSearchInput");
+      if (activeSearch && state.currentView === "builder") {
+        activeSearch.focus();
+      }
+    }
+  });
+}
 
 // Refresh Project & Git State from Backend
 async function refreshAppState() {
@@ -68,7 +88,31 @@ async function refreshAppState() {
   }
 }
 
-// Load Available Plugins for Wizard (All 655+ Taps and 50+ Targets)
+// Fetch Catalog Sync Status
+async function refreshCatalogStatus() {
+  try {
+    const status = await API.getCatalogStatus();
+    state.catalogStatus = status;
+    
+    const tapsCountEl = document.getElementById("tapsCountBadge");
+    const targetsCountEl = document.getElementById("targetsCountBadge");
+    const stepperTapsEl = document.getElementById("stepperTapsCount");
+    const stepperTargetsEl = document.getElementById("stepperTargetsCount");
+    const syncStatusEl = document.getElementById("syncStatusTimestamp");
+
+    if (tapsCountEl) tapsCountEl.textContent = status.extractors_count;
+    if (targetsCountEl) targetsCountEl.textContent = status.loaders_count;
+    if (stepperTapsEl) stepperTapsEl.textContent = status.extractors_count;
+    if (stepperTargetsEl) stepperTargetsEl.textContent = status.loaders_count;
+    if (syncStatusEl) {
+      syncStatusEl.textContent = `Synced: ${status.last_synced_extractors}`;
+    }
+  } catch (err) {
+    console.warn("Catalog status fetch error:", err);
+  }
+}
+
+// Load Catalog from Backend
 async function loadCatalog() {
   try {
     const [extResp, ldrResp] = await Promise.all([
@@ -77,14 +121,49 @@ async function loadCatalog() {
     ]);
     state.extractors = extResp.plugins || [];
     state.loaders = ldrResp.plugins || [];
-
-    const srcCountBadge = document.getElementById("sourceCatalogCount");
-    const tgtCountBadge = document.getElementById("targetCatalogCount");
-    if (srcCountBadge) srcCountBadge.textContent = state.extractors.length;
-    if (tgtCountBadge) tgtCountBadge.textContent = state.loaders.length;
   } catch (err) {
     console.error("Failed to load catalog:", err);
   }
+}
+
+// Setup Dedicated Sync Taps & Sync Targets Buttons
+function setupSyncControls() {
+  const btnSyncTaps = document.getElementById("btnSyncTaps");
+  const btnSyncTargets = document.getElementById("btnSyncTargets");
+
+  btnSyncTaps.addEventListener("click", async () => {
+    btnSyncTaps.classList.add("syncing");
+    btnSyncTaps.disabled = true;
+    try {
+      const res = await API.syncTaps();
+      await loadCatalog();
+      await refreshCatalogStatus();
+      renderSourceGrid();
+      alert(res.message || "Taps synchronized successfully from Meltano Hub!");
+    } catch (err) {
+      alert("Failed to sync taps: " + err.message);
+    } finally {
+      btnSyncTaps.classList.remove("syncing");
+      btnSyncTaps.disabled = false;
+    }
+  });
+
+  btnSyncTargets.addEventListener("click", async () => {
+    btnSyncTargets.classList.add("syncing");
+    btnSyncTargets.disabled = true;
+    try {
+      const res = await API.syncTargets();
+      await loadCatalog();
+      await refreshCatalogStatus();
+      renderTargetGrid();
+      alert(res.message || "Targets synchronized successfully from Meltano Hub!");
+    } catch (err) {
+      alert("Failed to sync targets: " + err.message);
+    } finally {
+      btnSyncTargets.classList.remove("syncing");
+      btnSyncTargets.disabled = false;
+    }
+  });
 }
 
 // Navigation Handling
@@ -111,6 +190,18 @@ function switchView(viewName) {
   document.querySelectorAll(".view-section").forEach(s => {
     s.classList.toggle("active", s.id === `view-${viewName}`);
   });
+
+  const breadcrumbEl = document.getElementById("breadcrumbSection");
+  if (breadcrumbEl) {
+    const titles = {
+      pipelines: "Pipelines",
+      builder: "Pipeline Studio",
+      yaml: "meltano.yml",
+      history: "Runs & Telemetry"
+    };
+    breadcrumbEl.textContent = titles[viewName] || viewName;
+  }
+
   renderCurrentView();
 }
 
@@ -129,7 +220,7 @@ function updateGitHeaderUI() {
   const changesCount = document.getElementById("gitChangesCount");
 
   if (!state.git || !state.git.is_git) {
-    branchLabel.textContent = "no git repo";
+    branchLabel.textContent = "detached";
     dot.className = "git-dot";
     changesContainer.style.display = "none";
     return;
@@ -147,11 +238,11 @@ function updateGitHeaderUI() {
 }
 
 // ==========================================
-// 1. PIPELINES VIEW
+// 1. PIPELINES VIEW (HIGH DENSITY TABLE)
 // ==========================================
 async function renderPipelinesView() {
-  const container = document.getElementById("pipelinesList");
-  container.innerHTML = `<div style="color: var(--text-muted); padding: 24px;">Loading pipelines...</div>`;
+  const container = document.getElementById("pipelinesTableContainer");
+  container.innerHTML = `<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; padding: 16px;">Querying meltano.yml pipelines...</div>`;
 
   try {
     const resp = await API.listPipelines();
@@ -159,76 +250,88 @@ async function renderPipelinesView() {
 
     if (pipelines.length === 0) {
       container.innerHTML = `
-        <div class="empty-state">
-          <div class="empty-state-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-          </div>
-          <h3 class="empty-state-title">No Pipelines Configured Yet</h3>
-          <p class="empty-state-desc">Create your first data extraction & loading pipeline using our visual builder.</p>
+        <div style="border: 1px dashed var(--border-default); border-radius: var(--radius-sm); padding: 48px 24px; text-align: center; background-color: var(--bg-panel);">
+          <div style="font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px;">No Active Pipelines Defined</div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Configure an extractor and loader in the Studio, or define jobs in meltano.yml.</div>
           <button class="btn btn-primary" onclick="switchView('builder')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-            Build First Pipeline
+            + Configure Pipeline
           </button>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = pipelines.map(pipe => {
-      const extName = pipe.extractor || (pipe.tasks && pipe.tasks[0]?.split(" ")[0]) || "source";
-      const ldrName = pipe.loader || (pipe.tasks && pipe.tasks[0]?.split(" ")[1]) || "destination";
+    container.innerHTML = `
+      <table class="pipeline-table">
+        <thead>
+          <tr>
+            <th>Pipeline / Job ID</th>
+            <th>Source Connector</th>
+            <th></th>
+            <th>Destination</th>
+            <th>Specification</th>
+            <th style="text-align: right;">Operations</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${pipelines.map(pipe => {
+            const extName = pipe.extractor || (pipe.tasks && pipe.tasks[0]?.split(" ")[0]) || "source";
+            const ldrName = pipe.loader || (pipe.tasks && pipe.tasks[0]?.split(" ")[1]) || "destination";
 
-      const extMeta = state.extractors.find(e => e.name === extName);
-      const ldrMeta = state.loaders.find(l => l.name === ldrName);
+            const extMeta = state.extractors.find(e => e.name === extName);
+            const ldrMeta = state.loaders.find(l => l.name === ldrName);
 
-      const extLogo = extMeta?.logo_url || `https://hub.meltano.com/assets/logos/extractors/${extName.replace('tap-', '')}.png`;
-      const ldrLogo = ldrMeta?.logo_url || `https://hub.meltano.com/assets/logos/loaders/${ldrName.replace('target-', '')}.png`;
+            const extLogo = extMeta?.logo_url || `https://hub.meltano.com/assets/logos/extractors/${extName.replace('tap-', '')}.png`;
+            const ldrLogo = ldrMeta?.logo_url || `https://hub.meltano.com/assets/logos/loaders/${ldrName.replace('target-', '')}.png`;
 
-      return `
-        <div class="pipeline-card">
-          <div class="pipeline-visual-flow">
-            <div class="node-box">
-              <img src="${extLogo}" class="node-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%23f97316\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'white\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>T</text></svg>'">
-              <div>
-                <div class="node-info-name">${extMeta?.label || extName}</div>
-                <div class="node-info-role">Source</div>
-              </div>
-            </div>
-
-            <div class="flow-arrow">
-              <span class="badge badge-neutral" style="font-size: 10px;">Singer ELT</span>
-              <div class="flow-line"></div>
-            </div>
-
-            <div class="node-box">
-              <img src="${ldrLogo}" class="node-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%2338bdf8\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'white\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>L</text></svg>'">
-              <div>
-                <div class="node-info-name">${ldrMeta?.label || ldrName}</div>
-                <div class="node-info-role">Destination</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="pipeline-actions">
-            <button class="btn btn-secondary btn-sm" onclick="configureExistingPipeline('${extName}', '${ldrName}')">
-              Configure
-            </button>
-            <button class="btn btn-primary btn-sm" onclick="triggerPipelineRun('${extName}', '${ldrName}')">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              Run Now
-            </button>
-          </div>
-        </div>
-      `;
-    }).join("");
-
+            return `
+              <tr>
+                <td>
+                  <span class="tag-mono" style="font-weight: 600; color: var(--text-main);">${pipe.id || pipe.name}</span>
+                </td>
+                <td>
+                  <div class="plug-node">
+                    <img src="${extLogo}" class="plug-logo-img" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%23e28437\\' width=\\'24\\' height=\\'24\\' rx=\\'2\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'black\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>T</text></svg>'">
+                    <div>
+                      <div class="plug-name">${extName}</div>
+                      <div style="font-size: 10px; color: var(--text-muted);">${extMeta?.label || 'Singer Tap'}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flow-arrow-icon"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </td>
+                <td>
+                  <div class="plug-node">
+                    <img src="${ldrLogo}" class="plug-logo-img" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%2338bdf8\\' width=\\'24\\' height=\\'24\\' rx=\\'2\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'black\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>L</text></svg>'">
+                    <div>
+                      <div class="plug-name">${ldrName}</div>
+                      <div style="font-size: 10px; color: var(--text-muted);">${ldrMeta?.label || 'Singer Target'}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span class="tag-mono">meltano run ${extName} ${ldrName}</span>
+                </td>
+                <td style="text-align: right;">
+                  <button class="btn btn-primary btn-sm" onclick="triggerPipelineRun('${extName}', '${ldrName}')">
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Run
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    `;
   } catch (err) {
-    container.innerHTML = `<div style="color: var(--status-error); padding: 20px;">Error loading pipelines: ${err.message}</div>`;
+    container.innerHTML = `<div style="color: var(--color-error); font-family: var(--font-mono); font-size: 12px;">Failed to load pipelines: ${err.message}</div>`;
   }
 }
 
 // ==========================================
-// 2. PIPELINE BUILDER (WIZARD)
+// 2. PIPELINE BUILDER (STEPPER)
 // ==========================================
 function setupWizardControls() {
   const btnNext = document.getElementById("btnWizardNext");
@@ -242,14 +345,12 @@ function setupWizardControls() {
     switchView("pipelines");
   });
 
-  // Source Search & Categories
   const srcSearch = document.getElementById("sourceSearchInput");
   srcSearch.addEventListener("input", (e) => {
     state.wizard.sourceQuery = e.target.value;
     renderSourceGrid();
   });
 
-  // Target Search & Categories
   const tgtSearch = document.getElementById("targetSearchInput");
   tgtSearch.addEventListener("input", (e) => {
     state.wizard.targetQuery = e.target.value;
@@ -281,14 +382,14 @@ function renderCategoryPills(containerId, onSelect) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = CATEGORIES.map((cat, i) => `
-    <button class="cat-pill ${i === 0 ? 'active' : ''}" data-cat="${cat}">${cat}</button>
+    <button class="cat-btn ${i === 0 ? 'active' : ''}" data-cat="${cat}">${cat}</button>
   `).join("");
 
-  container.querySelectorAll(".cat-pill").forEach(pill => {
-    pill.addEventListener("click", () => {
-      container.querySelectorAll(".cat-pill").forEach(p => p.classList.remove("active"));
-      pill.classList.add("active");
-      onSelect(pill.getAttribute("data-cat"));
+  container.querySelectorAll(".cat-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      onSelect(btn.getAttribute("data-cat"));
     });
   });
 }
@@ -328,26 +429,26 @@ function renderWizardStep() {
 
   if (step === 1) {
     btnNext.disabled = !state.wizard.selectedSource;
-    btnNext.textContent = "Select Destination ➔";
+    btnNext.textContent = "Select Destination →";
     renderSourceGrid();
   } else if (step === 2) {
     btnNext.disabled = !state.wizard.selectedTarget;
-    btnNext.textContent = "Configure Settings ➔";
+    btnNext.textContent = "Configure Parameters →";
     renderTargetGrid();
   } else if (step === 3) {
     btnNext.disabled = false;
-    btnNext.textContent = "Select Tables & Streams ➔";
+    btnNext.textContent = "Select Schema Streams →";
     renderStep3Forms();
   } else if (step === 4) {
     btnNext.disabled = false;
-    btnNext.textContent = "Save & Commit to meltano.yml ✨";
+    btnNext.textContent = "Commit to meltano.yml";
     renderStep4Streams();
   }
 }
 
 function renderSourceGrid() {
   const grid = document.getElementById("sourcePluginsGrid");
-  const statsLabel = document.getElementById("sourceStatsLabel");
+  const filterCountEl = document.getElementById("sourceFilterCount");
   const query = (state.wizard.sourceQuery || "").toLowerCase().trim();
   const cat = state.wizard.sourceCategory;
 
@@ -357,24 +458,29 @@ function renderSourceGrid() {
     return matchesQuery && matchesCat;
   });
 
-  statsLabel.textContent = `Showing ${filtered.length} of ${state.extractors.length} extractors`;
+  filterCountEl.textContent = `Showing ${filtered.length} of ${state.extractors.length} extractors`;
 
-  // Render top results smoothly
+  // Display top 100 to prevent heavy DOM rendering while allowing fast pagination
   const displayItems = filtered.slice(0, 100);
 
   grid.innerHTML = displayItems.map(p => `
-    <div class="plugin-item-card ${state.wizard.selectedSource?.name === p.name ? 'selected' : ''}" onclick="selectSourcePlugin('${p.name}')">
-      <div class="plugin-card-header">
-        <img src="${p.logo_url}" class="plugin-card-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%23f97316\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'white\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>T</text></svg>'">
-        <div>
-          <div class="plugin-card-title">${p.label}</div>
-          <div class="plugin-card-category">${p.category || 'Connector'}</div>
+    <div class="connector-card ${state.wizard.selectedSource?.name === p.name ? 'selected' : ''}" onclick="selectSourcePlugin('${p.name}')">
+      <div class="connector-card-top">
+        <div class="connector-card-identity">
+          <img src="${p.logo_url}" class="plug-logo-img" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%23232836\\' width=\\'24\\' height=\\'24\\' rx=\\'2\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'%23e28437\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>T</text></svg>'">
+          <div>
+            <div class="connector-card-name">${p.name}</div>
+            <div style="font-size: 10px; color: var(--text-muted);">${p.label}</div>
+          </div>
         </div>
+        <span class="tag-variant">${p.default_variant || 'default'}</span>
       </div>
-      <div class="plugin-card-desc">${p.description}</div>
-      <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
-        <span class="badge badge-neutral" style="font-size: 10px;">${p.name}</span>
-        ${state.wizard.selectedSource?.name === p.name ? '<span class="badge badge-success">Selected</span>' : ''}
+
+      <div class="connector-card-desc">${p.description}</div>
+
+      <div class="connector-card-meta">
+        <span class="tag-mono" style="font-size: 10px;">${p.category || 'Connector'}</span>
+        ${state.wizard.selectedSource?.name === p.name ? '<span class="tag-variant" style="color: var(--color-success); border-color: var(--color-success-border); background-color: var(--color-success-bg);">Selected</span>' : ''}
       </div>
     </div>
   `).join("");
@@ -388,7 +494,7 @@ function selectSourcePlugin(name) {
 
 function renderTargetGrid() {
   const grid = document.getElementById("targetPluginsGrid");
-  const statsLabel = document.getElementById("targetStatsLabel");
+  const filterCountEl = document.getElementById("targetFilterCount");
   const query = (state.wizard.targetQuery || "").toLowerCase().trim();
   const cat = state.wizard.targetCategory;
 
@@ -398,21 +504,26 @@ function renderTargetGrid() {
     return matchesQuery && matchesCat;
   });
 
-  statsLabel.textContent = `Showing ${filtered.length} of ${state.loaders.length} destinations`;
+  filterCountEl.textContent = `Showing ${filtered.length} of ${state.loaders.length} destinations`;
 
   grid.innerHTML = filtered.map(p => `
-    <div class="plugin-item-card ${state.wizard.selectedTarget?.name === p.name ? 'selected' : ''}" onclick="selectTargetPlugin('${p.name}')">
-      <div class="plugin-card-header">
-        <img src="${p.logo_url}" class="plugin-card-logo" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%2338bdf8\\' width=\\'24\\' height=\\'24\\' rx=\\'4\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'white\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>L</text></svg>'">
-        <div>
-          <div class="plugin-card-title">${p.label}</div>
-          <div class="plugin-card-category">${p.category || 'Storage'}</div>
+    <div class="connector-card ${state.wizard.selectedTarget?.name === p.name ? 'selected' : ''}" onclick="selectTargetPlugin('${p.name}')">
+      <div class="connector-card-top">
+        <div class="connector-card-identity">
+          <img src="${p.logo_url}" class="plug-logo-img" onerror="this.src='data:image/svg+xml,<svg xmlns=\\'http://www.w3.org/2000/svg\\' viewBox=\\'0 0 24 24\\'><rect fill=\\'%23232836\\' width=\\'24\\' height=\\'24\\' rx=\\'2\\'/><text x=\\'12\\' y=\\'16\\' font-size=\\'12\\' fill=\\'%2338bdf8\\' text-anchor=\\'middle\\' font-weight=\\'bold\\'>L</text></svg>'">
+          <div>
+            <div class="connector-card-name">${p.name}</div>
+            <div style="font-size: 10px; color: var(--text-muted);">${p.label}</div>
+          </div>
         </div>
+        <span class="tag-variant">${p.default_variant || 'default'}</span>
       </div>
-      <div class="plugin-card-desc">${p.description}</div>
-      <div style="margin-top: auto; display: flex; justify-content: space-between; align-items: center;">
-        <span class="badge badge-neutral" style="font-size: 10px;">${p.name}</span>
-        ${state.wizard.selectedTarget?.name === p.name ? '<span class="badge badge-info">Selected</span>' : ''}
+
+      <div class="connector-card-desc">${p.description}</div>
+
+      <div class="connector-card-meta">
+        <span class="tag-mono" style="font-size: 10px;">${p.category || 'Warehouse'}</span>
+        ${state.wizard.selectedTarget?.name === p.name ? '<span class="tag-variant" style="color: var(--engine-cyan); border-color: rgba(56, 189, 248, 0.3); background-color: var(--engine-cyan-subtle);">Selected</span>' : ''}
       </div>
     </div>
   `).join("");
@@ -424,14 +535,14 @@ function selectTargetPlugin(name) {
   renderTargetGrid();
 }
 
-// Step 3: Dynamic Form Generation
+// Step 3: Parameters Form
 async function renderStep3Forms() {
   const src = state.wizard.selectedSource;
   const tgt = state.wizard.selectedTarget;
 
-  document.getElementById("configStepTitle").textContent = `Configure ${src.label} ➔ ${tgt.label}`;
-  document.getElementById("sourceConfigHeading").textContent = `${src.label} (Source)`;
-  document.getElementById("targetConfigHeading").textContent = `${tgt.label} (Destination)`;
+  document.getElementById("configStepHeader").textContent = `${src.name} → ${tgt.name}`;
+  document.getElementById("sourceParamHeading").textContent = `Source Configuration: ${src.name}`;
+  document.getElementById("targetParamHeading").textContent = `Destination Configuration: ${tgt.name}`;
 
   const [srcDetails, tgtDetails] = await Promise.all([
     API.getPluginDetails("extractors", src.name, src.default_variant),
@@ -445,7 +556,7 @@ async function renderStep3Forms() {
 function renderFormFields(containerId, settings, typePrefix) {
   const container = document.getElementById(containerId);
   if (!settings || settings.length === 0) {
-    container.innerHTML = `<div style="color: var(--text-muted); font-size: 13px;">No required settings for this connector.</div>`;
+    container.innerHTML = `<div style="font-family: var(--font-mono); color: var(--text-muted); font-size: 11px;">Zero required configuration parameters.</div>`;
     return;
   }
 
@@ -457,27 +568,27 @@ function renderFormFields(containerId, settings, typePrefix) {
 
     if (s.kind === "options" && s.options) {
       return `
-        <div class="form-group">
-          <div class="form-label-row">
-            <label class="form-label" for="${inputId}">${s.label}</label>
+        <div class="form-item">
+          <div class="form-label-line">
+            <label class="form-label" for="${inputId}">config.${s.name}</label>
           </div>
-          <select class="form-input form-field" id="${inputId}" data-name="${s.name}" data-secret="${isSecret}" data-type="${typePrefix}">
+          <select class="form-control form-field" id="${inputId}" data-name="${s.name}" data-secret="${isSecret}" data-type="${typePrefix}">
             ${s.options.map(opt => `<option value="${opt}" ${opt === defaultValue ? 'selected' : ''}>${opt}</option>`).join("")}
           </select>
-          ${s.description ? `<div class="form-hint">${s.description}</div>` : ''}
+          ${s.description ? `<div class="form-help">${s.description}</div>` : ''}
         </div>
       `;
     }
 
     return `
-      <div class="form-group ${s.kind === 'string' && s.description?.length > 100 ? 'form-group-full' : ''}">
-        <div class="form-label-row">
-          <label class="form-label" for="${inputId}">${s.label}</label>
-          ${isSecret ? '<span class="secret-badge">🔒 Stored in .env</span>' : ''}
+      <div class="form-item ${s.kind === 'string' && s.description?.length > 100 ? 'form-row-full' : ''}">
+        <div class="form-label-line">
+          <label class="form-label" for="${inputId}">${typePrefix === 'source' ? 'config' : 'target'}.${s.name}</label>
+          ${isSecret ? '<span class="secret-tag">ENV SECRET</span>' : ''}
         </div>
         <input 
           type="${inputType}" 
-          class="form-input form-field" 
+          class="form-control form-field" 
           id="${inputId}" 
           data-name="${s.name}" 
           data-secret="${isSecret}"
@@ -485,7 +596,7 @@ function renderFormFields(containerId, settings, typePrefix) {
           placeholder="${s.placeholder || ''}" 
           value="${defaultValue}"
         >
-        ${s.description ? `<div class="form-hint">${s.description}</div>` : ''}
+        ${s.description ? `<div class="form-help">${s.description}</div>` : ''}
       </div>
     `;
   }).join("");
@@ -511,11 +622,12 @@ function collectFormValues() {
 
 async function runConnectionTest() {
   collectFormValues();
-  const alert = document.getElementById("connectionTestAlert");
-  alert.style.display = "block";
-  alert.style.backgroundColor = "var(--bg-surface-elevated)";
-  alert.style.color = "var(--text-secondary)";
-  alert.textContent = "Testing connection to database/service...";
+  const alertBox = document.getElementById("connectionTestAlert");
+  alertBox.style.display = "block";
+  alertBox.style.backgroundColor = "var(--bg-panel-elevated)";
+  alertBox.style.color = "var(--text-muted)";
+  alertBox.style.border = "1px solid var(--border-default)";
+  alertBox.textContent = "Running test connection against connector...";
 
   try {
     const src = state.wizard.selectedSource;
@@ -530,54 +642,53 @@ async function runConnectionTest() {
 
     const res = await API.testConnection("extractors", src.name);
     if (res.success) {
-      alert.style.backgroundColor = "var(--status-success-bg)";
-      alert.style.color = "var(--status-success)";
-      alert.textContent = `✓ ${res.message}`;
+      alertBox.style.backgroundColor = "var(--color-success-bg)";
+      alertBox.style.color = "var(--color-success)";
+      alertBox.style.border = "1px solid var(--color-success-border)";
+      alertBox.textContent = `SUCCESS: ${res.message}`;
     } else {
-      alert.style.backgroundColor = "var(--status-warning-bg)";
-      alert.style.color = "var(--status-warning)";
-      alert.textContent = `Notice: ${res.message}`;
+      alertBox.style.backgroundColor = "var(--color-warning-bg)";
+      alertBox.style.color = "var(--color-warning)";
+      alertBox.style.border = "1px solid var(--color-warning-border)";
+      alertBox.textContent = `NOTICE: ${res.message}`;
     }
   } catch (err) {
-    alert.style.backgroundColor = "var(--status-error-bg)";
-    alert.style.color = "var(--status-error)";
-    alert.textContent = `Test Error: ${err.message}`;
+    alertBox.style.backgroundColor = "var(--color-error-bg)";
+    alertBox.style.color = "var(--color-error)";
+    alertBox.style.border = "1px solid var(--color-error-border)";
+    alertBox.textContent = `ERROR: ${err.message}`;
   }
 }
 
-// Step 4: Stream / Table Selection Matrix
+// Step 4: Stream Discovery & Selection
 async function renderStep4Streams() {
-  document.getElementById("selectedSourceLabel").textContent = state.wizard.selectedSource.label;
-  document.getElementById("selectedTargetLabel").textContent = state.wizard.selectedTarget.label;
   await loadDiscoveredStreams();
 }
 
 async function loadDiscoveredStreams() {
   const container = document.getElementById("streamsList");
-  container.innerHTML = `<div style="padding: 16px; color: var(--text-muted);">Discovering tables & schema catalog...</div>`;
+  container.innerHTML = `<div style="padding: 12px; font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">Running catalog discovery on ${state.wizard.selectedSource.name}...</div>`;
 
   try {
     const resp = await API.discoverStreams(state.wizard.selectedSource.name);
     state.wizard.streams = resp.streams || [];
     document.getElementById("streamsCountBadge").textContent = `${state.wizard.streams.length} streams discovered`;
 
-    container.innerHTML = state.wizard.streams.map((s, idx) => `
-      <div class="stream-row">
-        <label class="stream-label-area">
+    container.innerHTML = state.wizard.streams.map(s => `
+      <div class="stream-item">
+        <label class="stream-toggle">
           <input type="checkbox" class="stream-checkbox" data-stream="${s.name}" ${s.selected ? 'checked' : ''}>
-          <div>
-            <strong style="font-size: 13px; color: var(--text-primary);">${s.name}</strong>
-            <span style="font-size: 11px; color: var(--text-muted); margin-left: 6px;">(${s.properties?.length || 0} fields)</span>
-          </div>
+          <span style="font-weight: 600; color: var(--text-main);">${s.name}</span>
+          <span class="tag-mono" style="font-size: 10px;">${s.properties?.length || 0} fields</span>
         </label>
-        <div class="stream-props-chips">
-          ${(s.properties || []).slice(0, 4).map(p => `<span class="prop-chip">${p.name}</span>`).join("")}
-          ${(s.properties?.length || 0) > 4 ? `<span class="prop-chip">+${s.properties.length - 4} more</span>` : ''}
+        <div style="display: flex; gap: 4px; max-width: 320px; flex-wrap: wrap;">
+          ${(s.properties || []).slice(0, 3).map(p => `<span class="tag-mono" style="font-size: 9px;">${p.name}</span>`).join("")}
+          ${(s.properties?.length || 0) > 3 ? `<span class="tag-mono" style="font-size: 9px;">+${s.properties.length - 3}</span>` : ''}
         </div>
       </div>
     `).join("");
   } catch (err) {
-    container.innerHTML = `<div style="padding: 16px; color: var(--status-error);">Error discovering streams: ${err.message}</div>`;
+    container.innerHTML = `<div style="padding: 12px; color: var(--color-error); font-family: var(--font-mono); font-size: 11px;">Discovery failed: ${err.message}</div>`;
   }
 }
 
@@ -633,7 +744,7 @@ async function saveNewPipeline() {
     });
 
     try {
-      await API.gitCommit(`Add pipeline ${src.name} to ${tgt.name} with ${selectedStreams.length} streams`);
+      await API.gitCommit(`feat(pipeline): configure ${src.name} to ${tgt.name}`);
     } catch (e) {
       console.warn("Git commit skipped:", e);
     }
@@ -647,41 +758,41 @@ async function saveNewPipeline() {
 }
 
 // ==========================================
-// 3. YAML INSPECTOR VIEW
+// 3. YAML INSPECTOR
 // ==========================================
 async function renderYamlView() {
   const pre = document.getElementById("rawYamlDisplay");
-  pre.textContent = "Loading meltano.yml...";
+  pre.textContent = "Reading meltano.yml...";
 
   try {
     const data = await API.getProject();
-    pre.textContent = data.raw_yaml || "# meltano.yml is not yet initialized";
-    document.getElementById("secretsCountBadge").textContent = `${data.secrets_keys?.length || 0} secrets in .env`;
+    pre.textContent = data.raw_yaml || "# meltano.yml not initialized";
+    document.getElementById("secretsCountBadge").textContent = `${data.secrets_keys?.length || 0} env variables in .env`;
 
     document.getElementById("btnCopyYaml").onclick = () => {
       navigator.clipboard.writeText(data.raw_yaml || "");
-      alert("meltano.yml copied to clipboard!");
+      alert("YAML copied to clipboard.");
     };
 
     document.getElementById("btnSaveYaml").onclick = () => openCommitModal();
     document.getElementById("btnRevertYaml").onclick = async () => {
-      if (confirm("Are you sure you want to revert uncommitted changes in meltano.yml?")) {
+      if (confirm("Discard all uncommitted changes in meltano.yml?")) {
         await API.gitRevert();
         await refreshAppState();
         renderYamlView();
       }
     };
   } catch (err) {
-    pre.textContent = "Error loading YAML: " + err.message;
+    pre.textContent = "Error: " + err.message;
   }
 }
 
 // ==========================================
-// 4. EXECUTION HISTORY VIEW
+// 4. RUNS & TELEMETRY VIEW
 // ==========================================
 async function renderHistoryView() {
-  const container = document.getElementById("runsHistoryList");
-  container.innerHTML = `<div style="color: var(--text-muted); padding: 16px;">Loading run history...</div>`;
+  const container = document.getElementById("runsHistoryTableContainer");
+  container.innerHTML = `<div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); padding: 14px;">Loading telemetry records...</div>`;
 
   try {
     const resp = await API.listRuns();
@@ -689,39 +800,54 @@ async function renderHistoryView() {
 
     if (runs.length === 0) {
       container.innerHTML = `
-        <div class="empty-state">
-          <h3 class="empty-state-title">No Runs Recorded</h3>
-          <p class="empty-state-desc">Trigger a pipeline to see live logs and run telemetry here.</p>
+        <div style="border: 1px dashed var(--border-default); border-radius: var(--radius-sm); padding: 36px; text-align: center; background-color: var(--bg-panel);">
+          <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">No pipeline executions logged yet.</div>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = runs.map(r => {
-      const statusBadge = r.status === "SUCCESS" ? "badge-success" : (r.status === "RUNNING" ? "badge-warning" : "badge-neutral");
-      return `
-        <div class="pipeline-card">
-          <div>
-            <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px;">${r.pipeline_name}</div>
-            <div style="font-size: 12px; color: var(--text-muted); font-family: monospace;">${r.command}</div>
-            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Started: ${r.start_time} | Duration: ${r.duration_seconds}s</div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span class="badge ${statusBadge}">${r.status}</span>
-            <button class="btn btn-secondary btn-sm" onclick="openTerminalForRun('${r.run_id}', '${r.pipeline_name}')">
-              View Logs
-            </button>
-          </div>
-        </div>
-      `;
-    }).join("");
+    container.innerHTML = `
+      <table class="pipeline-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Command</th>
+            <th>Pipeline</th>
+            <th>Execution Time</th>
+            <th>Duration</th>
+            <th style="text-align: right;">Logs</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${runs.map(r => `
+            <tr>
+              <td>
+                <span class="tag-mono" style="color: ${r.status === 'SUCCESS' ? 'var(--color-success)' : (r.status === 'RUNNING' ? 'var(--color-warning)' : 'var(--color-error)')};">
+                  ${r.status}
+                </span>
+              </td>
+              <td><span class="tag-mono">${r.command}</span></td>
+              <td><strong style="font-family: var(--font-mono); font-size: 12px;">${r.pipeline_name}</strong></td>
+              <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${r.start_time}</td>
+              <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${r.duration_seconds}s</td>
+              <td style="text-align: right;">
+                <button class="btn btn-secondary btn-sm" onclick="openTerminalForRun('${r.run_id}', '${r.pipeline_name}')">
+                  Logs (${r.log_count})
+                </button>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
   } catch (err) {
-    container.innerHTML = `<div style="color: var(--status-error);">Error: ${err.message}</div>`;
+    container.innerHTML = `<div style="color: var(--color-error); font-family: var(--font-mono); font-size: 11px;">Error: ${err.message}</div>`;
   }
 }
 
 // ==========================================
-// 5. LIVE TERMINAL / LOG DRAWER
+// 5. TERMINAL DOCK & LOG STREAMING
 // ==========================================
 function setupTerminalDrawer() {
   const header = document.getElementById("terminalHeader");
@@ -753,7 +879,7 @@ function triggerPipelineRun(extractor, loader) {
 
   drawer.classList.remove("closed", "minimized");
   logsBody.innerHTML = "";
-  title.textContent = `Running ${extractor} ➔ ${loader}`;
+  title.textContent = `meltano run ${extractor} ${loader}`;
   statusDot.className = "git-dot dirty";
 
   const startTime = Date.now();
@@ -770,7 +896,7 @@ function triggerPipelineRun(extractor, loader) {
     }, (finalStatus) => {
       clearInterval(state.runTimer);
       statusDot.className = finalStatus === "SUCCESS" ? "git-dot" : "git-dot dirty";
-      statusDot.style.backgroundColor = finalStatus === "SUCCESS" ? "var(--status-success)" : "var(--status-error)";
+      statusDot.style.backgroundColor = finalStatus === "SUCCESS" ? "var(--color-success)" : "var(--color-error)";
       refreshAppState();
     });
   }).catch(err => {
@@ -785,7 +911,7 @@ function openTerminalForRun(runId, pipelineName) {
   const title = document.getElementById("terminalPipelineTitle");
 
   drawer.classList.remove("closed", "minimized");
-  logsBody.innerHTML = `<div style="color: var(--text-muted);">Fetching logs for run ${runId}...</div>`;
+  logsBody.innerHTML = `<div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 11px;">Fetching run logs for ${runId}...</div>`;
   title.textContent = pipelineName;
 
   API.getRunDetails(runId).then(details => {
@@ -796,11 +922,11 @@ function openTerminalForRun(runId, pipelineName) {
 
 function appendTerminalLog(log) {
   const logsBody = document.getElementById("terminalLogsBody");
-  const streamClass = `log-stream-${log.stream || 'stdout'}`;
   const row = document.createElement("div");
-  row.className = "log-line";
+  row.className = "dock-line";
+  const streamClass = `dock-${log.stream || 'stdout'}`;
   row.innerHTML = `
-    <span class="log-time">[${log.timestamp || '--:--:--'}]</span>
+    <span class="dock-time">[${log.timestamp || '--:--:--'}]</span>
     <span class="${streamClass}">${escapeHtml(log.message || '')}</span>
   `;
   logsBody.appendChild(row);
@@ -813,7 +939,7 @@ function escapeHtml(text) {
 }
 
 // ==========================================
-// 6. GIT OPS MODAL CONTROLS
+// 6. GIT OPERATIONS
 // ==========================================
 function setupGitControls() {
   const btnCommit = document.getElementById("btnGitCommit");
@@ -828,11 +954,11 @@ function setupGitControls() {
   btnCancel.addEventListener("click", () => modal.style.display = "none");
 
   btnConfirm.addEventListener("click", async () => {
-    const msg = document.getElementById("commitMessageInput").value.trim() || "Update Meltano configuration";
+    const msg = document.getElementById("commitMessageInput").value.trim() || "chore: update meltano.yml";
     try {
       const res = await API.gitCommit(msg);
       modal.style.display = "none";
-      alert(res.message || "Committed to Git!");
+      alert(res.message || "Git commit successful.");
       await refreshAppState();
     } catch (e) {
       alert("Commit failed: " + e.message);
