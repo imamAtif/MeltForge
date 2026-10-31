@@ -1,0 +1,34 @@
+version: 1
+default_environment: dev
+project_id: meltforge-demo
+
+environments:
+  - name: dev
+  - name: prod
+
+plugins:
+  extractors:
+    - name: tap-postgres
+      variant: meltanolabs
+      pip_url: meltanolabs-tap-postgres
+      config:
+        host: localhost
+        port: 5432
+        database: analytics_db
+        user: db_user
+      select:
+        - users.*
+        - orders.*
+  loaders:
+    - name: target-snowflake
+      variant: meltanolabs
+      pip_url: meltanolabs-target-snowflake
+      config:
+        account: xy12345.us-east-1
+        username: DATA_LOADER
+        database: ANALYTICS
+        warehouse: LOADING_WH
+        default_target_schema: RAW
+
+jobs: []
+schedules: []

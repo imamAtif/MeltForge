@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "meltforge"
+version = "0.1.0"
+description = "GitOps-first visual interface & studio for Meltano data pipelines."
+authors = [{ name = "Atif Imam" }]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.28.0",
+    "ruamel.yaml>=0.18.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.27.0",
+    "websockets>=12.0",
+    "click>=8.1.0",
+    "meltano>=3.0.0"
+]
+
+[project.scripts]
+meltforge = "meltforge.cli:cli"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["meltforge*"]
